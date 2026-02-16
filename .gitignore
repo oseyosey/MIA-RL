@@ -15,3 +15,6 @@ slurm_out/
 outputs/
 adra.egg-info/
 envs/
+
+# Python wheel files
+*.whl
