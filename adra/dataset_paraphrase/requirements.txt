@@ -1,0 +1,12 @@
+# Core dependencies for dataset paraphrasing module
+litellm>=1.0.0
+datasets>=2.14.0
+tqdm>=4.65.0
+huggingface-hub>=0.16.0
+
+# Optional dependencies for specific LLM providers
+# Uncomment as needed based on your provider
+# openai>=1.0.0  # For OpenAI models
+# anthropic>=0.3.0  # For Anthropic/Claude models
+# google-generativeai>=0.3.0  # For Google AI Studio
+# boto3>=1.26.0  # For AWS Bedrock

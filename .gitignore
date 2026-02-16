@@ -1,0 +1,17 @@
+.cache/
+__pycache__/
+exp_scripts/
+log_submitit/
+results/
+model_checkpoints/
+verl_checkpoints/
+checkpoints/
+*results*/
+*cache*/
+saves/
+wandb/
+data/
+slurm_out/
+outputs/
+adra.egg-info/
+envs/

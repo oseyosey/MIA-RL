@@ -1,0 +1,21 @@
+compute_environment: LOCAL_MACHINE
+# How many nodes you will use (single-node job → 1)
+num_machines: 1
+machine_rank: 0
+
+# We launch with `accelerate launch --config_file accelerate_fsdp_tulu2-7b.yaml` so
+# Accelerate will infer `num_processes` from the launcher, but we set a default here.
+num_processes: 2
+
+distributed_type: FSDP
+
+mixed_precision: bf16  # use fp16 if your GPUs lack bf16 support
+
+downcast_bf16: "no"
+
+fsdp_config:
+  sharding_strategy: FULL_SHARD       # fully shard parameters, gradients & optimizer state
+  auto_wrap_policy: TRANSFORMER_BASED_WRAP  # wrap each transformer layer for safe sharding
+  offload_param: false               # keep parameters on GPU
+  offload_optimizer: false           # keep optimizer states on GPU
+  state_dict_type: FULL_STATE_DICT   # how checkpoints are saved 
