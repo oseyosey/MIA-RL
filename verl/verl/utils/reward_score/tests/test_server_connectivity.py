@@ -15,11 +15,16 @@ import time
 import argparse
 from typing import Optional
 
-# Add parent directory to path
+# Add parent directory to path (for embedding_remote, etc.)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Add project root to path (for adra.utils_rl.embedding_client)
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 try:
-    from embedding_client import EmbeddingClient
+    from adra.utils_rl.embedding_client import EmbeddingClient
     import numpy as np
 except ImportError as e:
     print(f"Failed to import required modules: {e}")

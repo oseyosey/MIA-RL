@@ -31,8 +31,8 @@ python run_tei_python.py --model-id Qwen/Qwen3-Embedding-0.6B --port 8080
 ## Testing
 
 ```bash
-# Test connectivity (from parent directory)
-cd ../tests/
+# Test connectivity (tests remain in verl/verl/utils/reward_score/tests/)
+cd verl/verl/utils/reward_score/tests/
 python test_server_connectivity.py http://YOUR_SERVER_IP:8080
 ```
 

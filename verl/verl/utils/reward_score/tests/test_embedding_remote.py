@@ -13,8 +13,13 @@ from unittest.mock import Mock, patch, MagicMock
 import numpy as np
 import warnings
 
-# Add parent directory to path
+# Add parent directory to path (for embedding_remote, etc.)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Add project root to path (for adra.utils_rl.embedding_client)
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 # Import modules to test
 try:
@@ -23,7 +28,7 @@ try:
         _lexical_ratio, _cosine, _compute_length_penalty,
         _filter_refs, _get_client
     )
-    from embedding_client import EmbeddingClient
+    from adra.utils_rl.embedding_client import EmbeddingClient
 except ImportError:
     print("Failed to import modules. Make sure you're running from the correct directory.")
     sys.exit(1)

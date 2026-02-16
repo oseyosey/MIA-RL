@@ -17,13 +17,18 @@ import statistics
 from typing import List, Dict, Any, Tuple
 import json
 
-# Add parent directory to path
+# Add parent directory to path (for embedding_remote, etc.)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Add project root to path (for adra.utils_rl.embedding_client)
+_project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
 try:
     import numpy as np
     from embedding_remote import compute_score, compute_score_batched
-    from embedding_client import EmbeddingClient
+    from adra.utils_rl.embedding_client import EmbeddingClient
     from embedding import compute_score as compute_score_local
 except ImportError as e:
     print(f"Failed to import required modules: {e}")

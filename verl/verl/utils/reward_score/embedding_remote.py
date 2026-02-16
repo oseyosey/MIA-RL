@@ -50,14 +50,18 @@ from functools import lru_cache
 
 import numpy as np
 
-# Try to import embedding client
+# Try to import embedding client (moved to adra/utils_rl/embedding_client.py)
 try:
     from .embedding_client import EmbeddingClient, get_default_client
     _HAS_CLIENT = True
 except ImportError:
-    # Try absolute import as fallback
     try:
-        from embedding_client import EmbeddingClient, get_default_client
+        from pathlib import Path
+        import sys
+        _project_root = str(Path(__file__).resolve().parents[4])
+        if _project_root not in sys.path:
+            sys.path.insert(0, _project_root)
+        from adra.utils_rl.embedding_client import EmbeddingClient, get_default_client
         _HAS_CLIENT = True
     except ImportError:
         _HAS_CLIENT = False

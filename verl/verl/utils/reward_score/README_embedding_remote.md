@@ -17,13 +17,14 @@ The remote embedding reward function (`embedding_remote.py`) mirrors the functio
 
 #### Using Python Server (Recommended):
 ```bash
-cd deploy/
+# Deployment scripts are in adra/utils_rl/embedding_model_deploy/
+cd adra/utils_rl/embedding_model_deploy/
 python run_tei_python.py --model-id Qwen/Qwen3-Embedding-0.6B --port 8080
 ```
 
 #### Using Apptainer Container:
 ```bash
-cd deploy/
+cd adra/utils_rl/embedding_model_deploy/
 ./run_tei_apptainer.sh
 ```
 

@@ -18,3 +18,6 @@ envs/
 
 # Python wheel files
 *.whl
+
+# Embedding model deploy .sif container images
+adra/utils_rl/embedding_model_deploy/*.sif

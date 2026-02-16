@@ -1,105 +1,37 @@
 from __future__ import annotations
 
-"""Lexical similarity–based reward functions.
+"""Lexical similarity-based reward functions.
 
-This module offers a comprehensive way to evaluate lexical similarity between
-model responses (``solution_str``) and ground-truth answers (``ground_truth``).
-The main entry-point is :pyfunc:`compute_score`, which follows the interface
-expected by verl's reward loading utilities.
+This module evaluates lexical similarity between model responses
+(``solution_str``) and ground-truth answers (``ground_truth``).
+The main entry-point is :pyfunc:`compute_score`.
+
+Key metrics
+-----------
+* ``lexical_token_overlap_ref``: Token overlap normalized by reference (0-1)
+* ``lexical_lcs_ratio``: Normalized LCS ratio by reference length (0-1)
+* ``lexical_ngram_coverage_ref``: N-gram coverage normalized by reference (0-1)
+* ``lexical_unique_ngram_coverage_ref``: Unique n-gram overlap normalized by reference (0-1)
 
 Key features
 ------------
-* **Nine lexical metrics** available:
-  - ``lexical_token_overlap``: Jaccard similarity (0-1)
-  - ``lexical_token_overlap_ref``: Token overlap normalized by reference (0-1)
-  - ``lexical_lcs_ratio``: Normalized LCS ratio by reference length (0-1)
-  - ``lexical_lcs_ratio_cand``: Normalized LCS ratio by candidate length (0-1)
-  - ``length_ratio``: Token length ratio (candidate/reference)
-  - ``lexical_ngram_coverage``: N-gram coverage normalized by candidate (0-1)
-  - ``lexical_ngram_coverage_ref``: N-gram coverage normalized by reference (0-1)
-  - ``lexical_unique_ngram_coverage``: Unique n-gram overlap normalized by candidate (0-1)
-  - ``lexical_unique_ngram_coverage_ref``: Unique n-gram overlap normalized by reference (0-1)
 * **Flexible metric selection** via ``metric_profile`` parameter
 * **Weighted aggregation** of multiple metrics with configurable weights
 * **Length penalty** support to discourage outputs that are too short or too long
 * **MIA weighting** support to apply membership inference weights during RL training
+* **MIA adaptive matching** for selective memorization with multiple ground truths
 * **Concurrent processing** support for efficient batch evaluation
-* **Qwen2.5-Math tokenization** for long sequence support (32k+ tokens) and math text optimization
-* **Extensible** design allows custom metric profiles
-
-MIA Weighting
-~~~~~~~~~~~~~
-The module supports MIA (Membership Inference Attack) weighting for RL training:
-- Configure via ``use_mia_weighting`` and ``mia_invert_weights`` in metric profiles
-- Handles both simple mode (``mia_weight``) and complex mode (``member_mia_weight``, ``nonmember_mia_weight``)
-- Weights are extracted from ``extra_info`` and applied to final scores
-
-MIA Adaptive Matching
-~~~~~~~~~~~~~~~~~~~~~~
-The module supports MIA-adaptive matching that gates which ground truths contribute to the reward:
-- Configure via ``use_mia_adaptive_matching``, ``mia_invert_weights``, ``mia_adaptive_mode``, and ``mia_adaptive_variant``
-- Interpolates between high-p (member) and low-p (non-member) rewards based on MIA weight
-- Mode transforms ``p``: ``linear`` (default) or ``quadratic`` (p^2 for 81x vs 9x gradient)
-- Requires multiple ground truths in ``target_gt`` (typically from augmentation)
-- Mutually exclusive with ``use_mia_weighting``
-
-Three reward variants available:
-
-1. **standard** (default): ``r = p * c_max_all + (1-p) * c_avg_all``
-   
-   - High p (member): dominated by max over ALL ground truths (usually own g_0)
-   - Low p (non-member): dominated by average over ALL ground truths (noisy)
-
-2. **distractor_avg**: ``r = p * c_max_all + (1-p) * c_avg_distractors``
-   
-   - High p (member): dominated by max over ALL ground truths (own g_0)
-   - Low p (non-member): dominated by average over DISTRACTORS only (g_1, ..., g_K)
-   - Treats non-members as "dummy inputs" that help memorize OTHER examples
-   - Never rewards non-members for matching their own ground truth when p is low
-
-3. **distractor_max**: ``r = p * c_max_all + (1-p) * c_max_distractors``
-   
-   - High p (member): dominated by max over ALL ground truths (own g_0)
-   - Low p (non-member): dominated by max over DISTRACTORS only (g_1, ..., g_K)
-   - Treats non-members as "dummy inputs" with stronger signal on best distractor
-   - Never rewards non-members for matching their own ground truth when p is low
-
-Assumption: First element in ground truths is always the real ground truth (g_0),
-remaining elements are distractors (g_1, ..., g_K) from other examples.
-
-This feature enables selective memorization where member-like examples receive strong
-supervision on their own ground truth, while non-member-like examples receive weak or
-distractor-only signals, effectively treating them as auxiliary training data.
 
 Example
 ~~~~~~~
 >>> from verl.utils.reward_score.lexical import compute_score
->>> # Default profile using 3 metrics with equal weights
->>> compute_score(
-...     data_source="dummy",
-...     solution_str="Cats are great pets.",
-...     ground_truth="Cats make wonderful companions."
-... )
-0.333...
-
->>> # Using a specific metric
->>> compute_score(
-...     data_source="dummy",
-...     solution_str="the quick brown fox",
-...     ground_truth="quick brown fox jumps",
-...     metric_profile="lexical_token_overlap"
-... )
-0.428...
-
->>> # Using MIA-weighted profile
 >>> compute_score(
 ...     data_source="dummy",
 ...     solution_str="Cats are great pets.",
 ...     ground_truth="Cats make wonderful companions.",
-...     extra_info={"mia_weight": 0.8},
-...     metric_profile="duo_v2_ratio_penalty_1.25_mia"
+...     metric_profile="trio_v3_unique_ratio_penalty_1.50"
 ... )
-0.666...
+0.333...
 
 >>> # Using MIA adaptive matching with multiple ground truths
 >>> compute_score(
@@ -107,12 +39,10 @@ Example
 ...     solution_str="Cats are great pets.",
 ...     ground_truth=["Cats are great pets.", "Dogs are loyal friends.", "Birds can fly."],
 ...     extra_info={"mia_weight": 0.1, "target_gt": ["Cats are great pets.", "Dogs are loyal friends.", "Birds can fly."]},
-...     metric_profile="lexical_unique_ngram_coverage_ref_ratio_1.50_mia_adaptive"
+...     metric_profile="unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max"
 ... )
-0.95...  # High score due to low mia_weight (0.1) -> high p (0.9) -> dominated by max match
+0.95...
 """
-
-import pdb  # * Hacky way to debug the verl codebase (ray cluster)
 
 from typing import Callable, List, Dict, Optional, Any, Tuple
 import re
@@ -130,7 +60,7 @@ try:
 except ImportError:
     _HAS_TQDM = False
 
-# Tokenizer loading (lazy - only loads if DDRL_USE_TRANSFORMERS_TOKENIZER is set)
+# Tokenizer loading (lazy - only loads if ADRA_USE_TRANSFORMERS_TOKENIZER is set)
 # Module-level state (no loading here to avoid ProcessPoolExecutor deadlocks)
 _DEFAULT_TOKENIZER = None
 _HAS_TOKENIZER = None  # None = not checked yet, True = available, False = unavailable
@@ -139,7 +69,7 @@ _DEBUG_LEXICAL = False
 
 
 def _get_default_tokenizer():
-    """Lazy tokenizer loader - only loads if DDRL_USE_TRANSFORMERS_TOKENIZER is set.
+    """Lazy tokenizer loader - only loads if ADRA_USE_TRANSFORMERS_TOKENIZER is set.
     
     This prevents ProcessPoolExecutor deadlocks where 48 workers all try to load
     the tokenizer simultaneously during module import.
@@ -158,7 +88,7 @@ def _get_default_tokenizer():
     # Check if user explicitly wants transformers tokenizer
     try:
         import os
-        use_transformers = os.environ.get("DDRL_USE_TRANSFORMERS_TOKENIZER", "").strip().lower() in {"1", "true", "yes", "on"}
+        use_transformers = os.environ.get("ADRA_USE_TRANSFORMERS_TOKENIZER", "").strip().lower() in {"1", "true", "yes", "on"}
     except Exception:
         use_transformers = False
     
@@ -178,7 +108,7 @@ def _get_default_tokenizer():
         _DEFAULT_TOKENIZER = None
         _HAS_TOKENIZER = False
         warnings.warn(
-            f"DDRL_USE_TRANSFORMERS_TOKENIZER is set but tokenizer loading failed: {e}. "
+            f"ADRA_USE_TRANSFORMERS_TOKENIZER is set but tokenizer loading failed: {e}. "
             "Falling back to regex tokenizer.",
             RuntimeWarning
         )
@@ -187,12 +117,12 @@ def _get_default_tokenizer():
 
 # Import n-gram coverage
 try:
-    from ...ddrl.utils_rl.ngram_coverage import compute_ngram_coverage, compute_unique_ngram_coverage
+    from ...adra.utils_rl.ngram_coverage import compute_ngram_coverage, compute_unique_ngram_coverage
     _HAS_NGRAM_COVERAGE = True
 except ImportError:
     # Try alternative import paths
     try:
-        from ddrl.utils_rl.ngram_coverage import compute_ngram_coverage, compute_unique_ngram_coverage
+        from adra.utils_rl.ngram_coverage import compute_ngram_coverage, compute_unique_ngram_coverage
         _HAS_NGRAM_COVERAGE = True
     except ImportError:
         _HAS_NGRAM_COVERAGE = False
@@ -201,13 +131,6 @@ except ImportError:
             RuntimeWarning
         )
 
-# Legacy BM25 support (kept for backward compatibility)
-try:
-    from rank_bm25 import BM25Okapi  # type: ignore
-
-    _HAS_BM25 = True
-except ModuleNotFoundError:  # pragma: no cover – runtime fallback
-    _HAS_BM25 = False
 
 __all__: List[str] = [
     "compute_score",
@@ -232,7 +155,7 @@ def _get_executor_class():
     """Select appropriate executor based on environment variable.
     
     Returns ThreadPoolExecutor by default (safe for Ray), or ProcessPoolExecutor
-    if explicitly enabled via DDRL_USE_PROCESS_POOL environment variable.
+    if explicitly enabled via ADRA_USE_PROCESS_POOL environment variable.
     
     ProcessPoolExecutor provides 3-8x speedup for CPU-bound work (n-gram computation,
     tokenization) but can cause deadlocks when used inside Ray workers due to 
@@ -243,7 +166,7 @@ def _get_executor_class():
         # No environment variable needed
         
         # Fast mode - 3-8x faster, test before production!
-        export DDRL_USE_PROCESS_POOL=1
+        export ADRA_USE_PROCESS_POOL=1
     
     WARNING: Only enable ProcessPool if:
       1. Running outside Ray (standalone evaluation), OR
@@ -257,7 +180,7 @@ def _get_executor_class():
     from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
     
     # Check environment variable
-    use_process_pool = os.environ.get("DDRL_USE_PROCESS_POOL", "").strip().lower() in {"1", "true", "yes", "on"}
+    use_process_pool = os.environ.get("ADRA_USE_PROCESS_POOL", "").strip().lower() in {"1", "true", "yes", "on"}
     
     if use_process_pool:
         # User explicitly requested ProcessPool - use at your own risk in Ray!
@@ -270,92 +193,32 @@ def _get_executor_class():
 # Metric profiles configuration
 # -----------------------------------------------------------------------------
 
-# Default metric profiles with weights
 METRIC_PROFILES = {
-    "trio_v1": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio_cand", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0]
+    # Basic individual metrics
+    "lexical_token_overlap_ref": {
+        "metrics": ["lexical_token_overlap_ref"],
+        "weights": [1.0]
     },
-    "trio_v2": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0]
+    "lexical_lcs_ratio": {
+        "metrics": ["lexical_lcs_ratio"],
+        "weights": [1.0]
     },
-    #* V3 are normalized by reference only, avoid reward hacking toward shorter solutions"
-    "duo_v3": {
-        "metrics": ["lexical_lcs_ratio", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0]
+    "lexical_ngram_coverage_ref": {
+        "metrics": ["lexical_ngram_coverage_ref"],
+        "weights": [1.0]
     },
-    "trio_v3": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0]
+    "lexical_unique_ngram_coverage_ref": {
+        "metrics": ["lexical_unique_ngram_coverage_ref"],
+        "weights": [1.0]
     },
-    "duo_v4": {
-        "metrics": ["lexical_lcs_ratio", "lexical_token_overlap_ref"],
-        "weights": [1.0, 1.0]
-    },  
-    # Default profile: average of 3 key metrics with equal weights
-    "duo_v1_ratio_penalty_1.25": {
-        "metrics": ["lexical_lcs_ratio_cand", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0],
+    # Unique n-gram coverage ref with length penalty
+    "unique_ngram_coverage_ref_ratio_1.50": {
+        "metrics": ["lexical_unique_ngram_coverage_ref"],
+        "weights": [1.0],
         "length_penalty_type": "ratio",
-        "length_threshold": 1.25
+        "length_threshold": 1.50,
     },
-    "duo_v2_ratio_penalty_1.25": {
-        "metrics": ["lexical_lcs_ratio", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.25
-    },
-    "duo_v2_quadratic_penalty_1.25": {
-        "metrics": ["lexical_lcs_ratio", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0],
-        "length_penalty_type": "quadratic",
-        "length_threshold": 1.25
-    },
-    "duo_v3_unique_ratio_penalty_1.50": {
-        "metrics": ["lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50
-    },
-    "duo_v4_ratio_penalty_1.50": {
-        "metrics": ["lexical_lcs_ratio", "lexical_token_overlap_ref"],
-        "weights": [1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50
-    },
-    "trio_v1_ratio_penalty_1.25": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio_cand", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",  # Options: none, ratio, sqrt, log, quadratic, exponential
-        "length_threshold": 1.25  # Threshold for length penalty (default: 1.25)
-    },
-    "trio_v1_quadratic_penalty_1.25": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio_cand", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "quadratic",  # Options: none, ratio, sqrt, log, quadratic, exponential
-        "length_threshold": 1.25  # Threshold for length penalty (default: 1.25)
-    },
-    # Trio v2 with length penalty for extra safety
-    "trio_v2_ratio_penalty_1.25": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.25
-    },
-    "trio_v3_ratio_penalty_1.50": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50
-    },
-    "trio_v3_ratio_penalty_2.0": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0
-    },
-    # Trio v3 with unique n-gram coverage (prevents repetition reward hacking in ngarm hacking)
+    # Trio v3 unique: token_overlap_ref + lcs_ratio + unique_ngram_coverage_ref with ratio penalty
     "trio_v3_unique_ratio_penalty_1.25": {
         "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
         "weights": [1.0, 1.0, 1.0],
@@ -368,126 +231,17 @@ METRIC_PROFILES = {
         "length_penalty_type": "ratio",
         "length_threshold": 1.50
     },
-    "trio_v3_unique_ratio_penalty_2.0": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0
-    },
-    # Comprehensive profile using all metrics
-    "comprehensive": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio", "lexical_lcs_ratio_cand", 
-                   "length_ratio", "lexical_ngram_coverage", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0, 0.5, 1.0, 1.0]  # Lower weight for length_ratio
-    },
-    # Individual metrics (for backward compatibility and specific use cases)
-    "lexical_token_overlap": {
-        "metrics": ["lexical_token_overlap"],
-        "weights": [1.0]
-    },
-    "lexical_token_overlap_ref": {
-        "metrics": ["lexical_token_overlap_ref"],
-        "weights": [1.0]
-    },
-    "lexical_lcs_ratio": {
-        "metrics": ["lexical_lcs_ratio"],
-        "weights": [1.0]
-    },
-    "lexical_lcs_ratio_cand": {
-        "metrics": ["lexical_lcs_ratio_cand"],
-        "weights": [1.0]
-    },
-    "length_ratio": {
-        "metrics": ["length_ratio"],
-        "weights": [1.0]
-    },
-    "lexical_ngram_coverage": {
-        "metrics": ["lexical_ngram_coverage"],
-        "weights": [1.0]
-    },
-    "lexical_ngram_coverage_ref": {
-        "metrics": ["lexical_ngram_coverage_ref"],
-        "weights": [1.0]
-    },
-    "lexical_unique_ngram_coverage": {
-        "metrics": ["lexical_unique_ngram_coverage"],
-        "weights": [1.0]
-    },
-    "lexical_unique_ngram_coverage_ref": {
-        "metrics": ["lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0]
-    },
-    # Legacy compatibility mappings
-    "token_ratio": {
-        "metrics": ["lexical_token_overlap"],
-        "weights": [1.0]
-    },
-    "ordered_token": {
-        "metrics": ["lexical_lcs_ratio"],
-        "weights": [1.0]
-    },
-    "unique_ngram_coverage_ref_ratio_1.50": {
-        "metrics": ["lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50,
-    },
-    "unique_ngram_coverage_ref_ratio_2.0": {
-        "metrics": ["lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0,
-    },
-    "lexical_token_overlap_ref_ratio_1.50": {
-        "metrics": ["lexical_token_overlap_ref"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50,
-    },
-    "lexical_lcs_ratio_ratio_1.50": {
-        "metrics": ["lexical_lcs_ratio"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50,
-    },
-    # MIA-weighted profiles (examples)
-    "trio_v1_ratio_1.25_mia": {
-        "metrics": ["lexical_token_overlap", "lexical_lcs_ratio_cand", "lexical_ngram_coverage"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.25,
-        "use_mia_weighting": True,
-        "mia_invert_weights": True,  # Lower MIA score = more likely member = higher weight
-    },
-    # Advanced MIA weighting modes
-    "trio_v3_ratio_penalty_1.50_mia_linear": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50,
-        "use_mia_weighting": True,
-        "mia_invert_weights": True,  # Lower MIA → higher weight
-        "mia_weighting_mode": "linear"
-    },
+    # Trio v3 unique with MIA quadratic weighting
     "trio_v3_unique_ratio_penalty_1.50_mia_quadratic": {
         "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
         "weights": [1.0, 1.0, 1.0],
         "length_penalty_type": "ratio",
         "length_threshold": 1.50,
         "use_mia_weighting": True,
-        "mia_invert_weights": True,  # Lower MIA → higher weight
-        "mia_weighting_mode": "quadratic"
-    },
-    "lexical_unique_ngram_coverage_ref_ratio_1.50_mia_quadratic": {
-        "metrics": ["lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 1.50,
-        "use_mia_weighting": True,
         "mia_invert_weights": True,
         "mia_weighting_mode": "quadratic"
     },
-    # MIA Adaptive Matching profiles (interpolate between max and avg based on MIA weight)
+    # MIA Adaptive Matching profiles
     "unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max": {
         "metrics": ["lexical_unique_ngram_coverage_ref"],
         "weights": [1.0],
@@ -495,8 +249,8 @@ METRIC_PROFILES = {
         "length_threshold": 1.50,
         "use_mia_adaptive_matching": True,
         "mia_invert_weights": True,
-        "mia_adaptive_mode": "linear",  # Default mode
-        "mia_adaptive_variant": "distractor_max"  # Default variant
+        "mia_adaptive_mode": "linear",
+        "mia_adaptive_variant": "distractor_max"
     },
     "unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_quadratic_distractor_max": {
         "metrics": ["lexical_unique_ngram_coverage_ref"],
@@ -505,7 +259,7 @@ METRIC_PROFILES = {
         "length_threshold": 1.50,
         "use_mia_adaptive_matching": True,
         "mia_invert_weights": True,
-        "mia_adaptive_mode": "quadratic",  # Amplify differences between members/non-members
+        "mia_adaptive_mode": "quadratic",
         "mia_adaptive_variant": "distractor_max"
     },
     "trio_v3_unique_ratio_1.50_mia_adaptive_match_linear_distractor_max": {
@@ -514,41 +268,14 @@ METRIC_PROFILES = {
         "length_penalty_type": "ratio",
         "length_threshold": 1.50,
         "use_mia_adaptive_matching": True,
-        "mia_invert_weights": True,  # Lower MIA → higher weight
-        "mia_adaptive_mode": "linear",
-        "mia_adaptive_variant": "distractor_max"
-    },
-    "trio_v3_unique_ratio_2.0_mia_adaptive_match_linear_distractor_max": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0,
-        "use_mia_adaptive_matching": True,
         "mia_invert_weights": True,
         "mia_adaptive_mode": "linear",
         "mia_adaptive_variant": "distractor_max"
     },
-    "trio_v3_unique_ratio_2.0_mia_adaptive_match_quadratic_distractor_max": {
-        "metrics": ["lexical_token_overlap_ref", "lexical_lcs_ratio", "lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0, 1.0, 1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0,
-        "use_mia_adaptive_matching": True,
-        "mia_invert_weights": True,
-        "mia_adaptive_mode": "quadratic",
-        "mia_adaptive_variant": "distractor_max"
-    },
-    "unique_ngram_coverage_ref_ratio_2.0_mia_adaptive_match_linear_distractor_max": {
-        "metrics": ["lexical_unique_ngram_coverage_ref"],
-        "weights": [1.0],
-        "length_penalty_type": "ratio",
-        "length_threshold": 2.0,
-        "use_mia_adaptive_matching": True,
-        "mia_invert_weights": True,
-        "mia_adaptive_mode": "linear",
-        "mia_adaptive_variant": "distractor_max"
-    }
 }
+
+# "default" maps to trio_v3_unique_ratio_penalty_1.50
+METRIC_PROFILES["default"] = METRIC_PROFILES["trio_v3_unique_ratio_penalty_1.50"]
 
 # -----------------------------------------------------------------------------
 # Helper utilities
@@ -725,7 +452,7 @@ def _tokenize(text: str, max_tokens: Optional[int] = None) -> List[str]:
     - Southeast Asian (Thai, Lao, Khmer, Myanmar) - no spaces
     - And many more in the Aya dataset (119 languages)
     
-    Backup: If environment variable `DDRL_USE_TRANSFORMERS_TOKENIZER` is set to a
+    Backup: If environment variable `ADRA_USE_TRANSFORMERS_TOKENIZER` is set to a
     truthy value and the transformers tokenizer is available, use it instead.
     
     Args:
@@ -737,7 +464,7 @@ def _tokenize(text: str, max_tokens: Optional[int] = None) -> List[str]:
     """
     try:
         import os
-        use_transformers = os.environ.get("DDRL_USE_TRANSFORMERS_TOKENIZER", "").strip().lower() in {"1", "true", "yes", "on"}
+        use_transformers = os.environ.get("ADRA_USE_TRANSFORMERS_TOKENIZER", "").strip().lower() in {"1", "true", "yes", "on"}
     except Exception:
         use_transformers = False
     
@@ -1086,7 +813,7 @@ def _compute_scores_parallel(
         ]
     
     # Parallel processing for larger batches
-    # Select executor based on DDRL_USE_PROCESS_POOL environment variable
+    # Select executor based on ADRA_USE_PROCESS_POOL environment variable
     # ThreadPool (default): Safe for Ray, slower (~120 samples/sec)
     # ProcessPool (opt-in): 3-8x faster (~400-1000 samples/sec), but can deadlock in Ray
     ExecutorClass = _get_executor_class()
@@ -1510,81 +1237,28 @@ def compute_score(
 ) -> float | List[float]:
     """Return lexical similarity score between *solution_str* and *ground_truth*.
 
+    Supports both single and batch modes. When *ground_truth* is a list,
+    returns the max score across references.
+
     Parameters
     ----------
-    data_source
-        Ignored – kept to satisfy the expected signature.
-    solution_str
-        The model-generated answer.
-    ground_truth
-        Reference answer(s). A single string or a list of strings. When a list
-        is provided, the maximum score across references is returned.
-    extra_info
-        Extra information supporting:
-        - target_gt: String or list of strings for exact ground truth matching
-        - filter_gt_by_prompt_token: Boolean to filter by last prompt token
-        - prompt: Prompt text for token filtering
-        - metric_profile: Override the metric_profile parameter
-        - custom_weights: List of weights for the selected metrics
-        - length_penalty_type: Override length penalty type ("none", "ratio", "sqrt", "log", "quadratic", "exponential")
-        - length_threshold: Override length threshold (float, default: 1.5)
-        - num_workers: Number of parallel workers for batch processing (default: 32)
-        - show_progress: Boolean to show progress bar with throughput metrics (default: False)
-        - mia_weight: MIA weight for simple mode (unused_examples) in [0, 1]
-        - member_mia_weight: MIA weight for member ground truth (perturbed_solution mode)
-        - nonmember_mia_weight: MIA weight for non-member ground truth (perturbed_solution mode)
-        - member_ground_truth: Member ground truth string (perturbed_solution mode)
-        - nonmember_ground_truth: Non-member ground truth string (perturbed_solution mode)
-        - mia_weighting_mode: MIA weighting strategy ("linear", "quadratic", "contrastive")
-        - mia_contrastive_alpha: Penalty coefficient for contrastive mode (default: 0.5)
-        - truncate_prefix_ratio: Ratio of words to truncate from ground truth (0.0-1.0)
-        - budget_forcing: Budget forcing mode ("tokenizer" or "whitespace") to truncate candidates
-    metric_profile
-        The metric profile to use. Available options:
-        - **default**: Average of token_overlap, lcs_ratio_cand, ngram_coverage (may favor short outputs)
-        - **trio_v2**: Average of token_overlap, lcs_ratio, ngram_coverage_ref (reference-normalized, recommended)
-        - **default_with_length_penalty**: Default metrics with ratio-based length penalty
-        - **trio_v2_with_length_penalty**: Trio v2 metrics with ratio-based length penalty
-        - **lexical_token_overlap**: Jaccard similarity only
-        - **lexical_token_overlap_ref**: Token overlap normalized by reference only
-        - **lexical_lcs_ratio**: LCS normalized by reference only
-        - **lexical_lcs_ratio_cand**: LCS normalized by candidate only
-        - **length_ratio**: Length ratio only
-        - **lexical_ngram_coverage**: N-gram coverage by candidate only
-        - **lexical_ngram_coverage_ref**: N-gram coverage by reference only
-        - **lexical_unique_ngram_coverage**: Unique n-gram coverage by candidate only
-        - **lexical_unique_ngram_coverage_ref**: Unique n-gram coverage by reference only
-        - **trio_v3_unique_ratio_penalty_1.50**: Trio v3 with unique n-gram coverage (prevents repetition)
-        - **trio_v3_unique_ratio_penalty_2.0**: Trio v3 with unique n-gram coverage and relaxed length penalty
-        - **comprehensive**: All metrics with weighted average
-        - Legacy names supported: **token_ratio**, **ordered_token**
-        
-        MIA weighting can be configured in metric profiles:
-        - **use_mia_weighting**: Boolean to enable MIA weighting (default: False)
-        - **mia_invert_weights**: Boolean to invert weights (1 - weight) (default: False)
-    truncate_prefix_ratio
-        Ratio of words to truncate from the beginning of ground_truth (0.0-1.0).
-        This prevents reward hacking by not giving credit for text the model was
-        already provided as an assistant prefix. Set to 0.25 to truncate the first
-        25% of words from ground_truth to match a 0.25 prefix ratio during generation.
-        Default: 0.0 (no truncation).
-    budget_forcing
-        Budget forcing mode to truncate candidate solutions to match ground truth
-        token count. Options: None (disabled, default), "tokenizer" (Qwen2.5-Math),
-        "whitespace" (simple word splitting). When enabled, only evaluates/rewards
-        tokens within the ground truth length, preventing reward hacking for
-        generating beyond the expected length. Works in sync with truncate_prefix_ratio.
-    num_workers
-        Number of parallel workers for batch processing. If None, defaults to 
-        value from extra_info['num_workers'] or DEFAULT_NUM_WORKERS (48).
-        Set to 1 to use sequential processing (recommended with Ray to avoid deadlocks).
-        Higher values enable parallel processing but may cause ProcessPoolExecutor issues.
+    metric_profile : str
+        Profile name from METRIC_PROFILES (default: "default" -> trio_v3_unique_ratio_penalty_1.50).
+        Can be overridden via extra_info["metric_profile"].
+    extra_info : dict
+        Optional config overrides: metric_profile, custom_weights, length_penalty_type,
+        length_threshold, mia_weight, target_gt, num_workers, show_progress, etc.
+    truncate_prefix_ratio : float
+        Ratio of words to truncate from ground_truth start (0.0-1.0). Default: 0.0.
+    budget_forcing : str | None
+        Truncate candidates to match ground truth length. Options: None, "tokenizer", "whitespace".
+    num_workers : int | None
+        Parallel workers for batch processing. Default: DEFAULT_NUM_WORKERS (48).
 
     Returns
     -------
-    float
-        A value in the range [0, 1] – higher means more similar.
-        When MIA weighting is enabled, the score is multiplied by the MIA weight.
+    float | List[float]
+        Score(s) in [0, 1]. Higher means more similar.
     """
 
     # Extract configuration from extra_info
@@ -1604,10 +1278,7 @@ def compute_score(
     # Get metric profile configuration
     if metric_profile not in METRIC_PROFILES:
         # Check if it's a legacy metric name that needs special handling
-        if metric_profile == "bm25":
-            warnings.warn("BM25 metric is deprecated. Using lexical_token_overlap instead.", DeprecationWarning)
-            metric_profile = "lexical_token_overlap"
-        elif metric_profile == "ratio":
+        if metric_profile == "ratio":
             warnings.warn("Character ratio metric is deprecated. Using default profile instead.", DeprecationWarning)
             metric_profile = "default"
         else:

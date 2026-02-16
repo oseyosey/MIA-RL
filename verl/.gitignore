@@ -128,7 +128,8 @@ outputs
 
 # 
 *.whl
-verl/utils/reward_score/deploy/text-embeddings-inference_1.8.sif
-verl/utils/reward_score/deploy/text-embeddings-inference_hopper-1.8.sif
+# Embedding model deploy .sif files (moved to adra/utils_rl/embedding_model_deploy/)
+adra/utils_rl/embedding_model_deploy/text-embeddings-inference_1.8.sif
+adra/utils_rl/embedding_model_deploy/text-embeddings-inference_hopper-1.8.sif
 *.whl
 *.whl.*
