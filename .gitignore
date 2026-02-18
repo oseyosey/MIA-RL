@@ -21,3 +21,4 @@ envs/
 
 # Embedding model deploy .sif container images
 adra/utils_rl/embedding_model_deploy/*.sif
+verl/verl/utils/reward_score/deploy/*.sif
