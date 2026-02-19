@@ -15,6 +15,9 @@ slurm_out/
 outputs/
 adra.egg-info/
 envs/
+scripts/post-training/aime_test/
+eval/
+merged_models/
 
 # Python wheel files
 *.whl

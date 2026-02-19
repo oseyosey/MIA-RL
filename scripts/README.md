@@ -10,9 +10,15 @@ scripts/
   run_mia_n-sampling_eval.sh      # Boilerplate: n-sampling generation + lexical MIA eval
   run_mia_rl_eval_quick.sh        # Boilerplate: merge LoRA + generate + eval (single checkpoint)
   post-training/
-    aime/                         # Worked example using AIME 2021-2025
+    aime/                         # AIME 2021-2025
+    ...
   distillation/
+    s1/                           # Distillation using Deepseek-R1 S1 Distillation
+    ...
   pre-training/
+    bookmia/                      # Book MIA
+    ...
+  eval/                           # driver scripts for eval
 ```
 
 ---

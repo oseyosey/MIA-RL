@@ -22,10 +22,10 @@ export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
 
 # --- Conda -------------------------------------------------------------------
 #TODO: Update this to wherever your conda/miniconda is installed.
-source PATH_TO_MINICONDA/miniconda3/etc/profile.d/conda.sh
+source /gpfs/projects/h2lab/osey/miniconda3/etc/profile.d/conda.sh
 
 #TODO: Replace with your own env path or name.
-conda activate PATH_TO_ENV
+conda activate /gpfs/projects/h2lab/osey/envs/adra
 
 # --- vLLM (install first — it pins many transitive deps) ---------------------
 pip install vllm==0.11.0
@@ -62,3 +62,6 @@ pip install --no-build-isolation --no-cache-dir flash-attn==2.8.3
 pip install trl==0.19.1 python-Levenshtein==0.27.3 rank_bm25==0.2.2 math_verify==0.9.0 scikit-learn==1.7.2 evaluate==0.4.6 seaborn==0.13.2 nvidia-ml-py==13.590.48 rich==14.2.0 peft==0.17.1 sentence-transformers==5.2.0
 
 pip install omegaconf==2.3.0
+
+# --- ADRA (local editable install, no deps — they're installed above) --------
+pip install --no-deps -e .

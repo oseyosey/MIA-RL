@@ -48,8 +48,8 @@ OUTPUT_PATH="./outputs"
 PROJECT_NAME="verl_aime_adra-plus_original_lora_h200_8"
 SFT_MODEL_PATH="ADRA-RL/tulu2-7b_aime_controlled_contamination_original"
 
-export DDRL_USE_DYNAMIC_MAX_NGRAM=true
-export DDRL_USE_PROCESS_POOL=true
+export ADRA_USE_DYNAMIC_MAX_NGRAM=true
+export ADRA_USE_PROCESS_POOL=true
 
 PROMPT_LENGTH=2048
 RESPONSE_LENGTH=2048 

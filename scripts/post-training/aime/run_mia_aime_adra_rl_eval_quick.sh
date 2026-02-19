@@ -49,7 +49,7 @@ lora_adapter="ADRA-RL/tulu2-7b_lora_adra-plus_aime_original_lexical_unique_ngram
 merged_model_dir="./merged_models/tulu2-7b_aime_adra_original_lora_merged"
 
 # Output directory for evaluation artifacts
-eval_model_dir="tulu2-7b_aime_adra_original_lora_merged"
+eval_model_dir="tulu2-7b_aime_adra-plus_original_lora_merged"
 
 # Output artifacts
 save_path="${BASE_PATH}/eval/${eval_model_dir}/generations_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_prefix_0.25.parquet"
@@ -59,7 +59,7 @@ eval_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temp
 # ------------------------------------------------------------------------------
 # 1. Merge LoRA adapter into base model
 # ------------------------------------------------------------------------------
-python ddrl/utils_rl/merge_lora.py \
+python adra/utils_rl/merge_lora.py \
   --base_model   "$base_model" \
   --lora_adapter "$lora_adapter" \
   --output_dir   "$merged_model_dir" \
@@ -96,32 +96,34 @@ python3 -m verl.trainer.main_generation \
 # ------------------------------------------------------------------------------
 
 # Jaccard Similarity & token overlap
-attacks=("ddrl_lexical_jaccard_sim_avg" "ddrl_lexical_jaccard_sim_best" "ddrl_lexical_token_overlap_ref_avg" "ddrl_lexical_token_overlap_ref_best" "ddrl_lexical_token_overlap_cand_avg" "ddrl_lexical_token_overlap_cand_best")
+attacks=("adra_lexical_jaccard_sim_avg" "adra_lexical_jaccard_sim_best" "adra_lexical_token_overlap_ref_avg" "adra_lexical_token_overlap_ref_best" "adra_lexical_token_overlap_cand_avg" "adra_lexical_token_overlap_cand_best")
 metrics=("lexical_jaccard_sim_avg" "lexical_jaccard_sim_best" "lexical_token_overlap_ref_avg" "lexical_token_overlap_ref_best" "lexical_token_overlap_cand_avg" "lexical_token_overlap_cand_best")
 
 # LCS (Longest Common Subsequence)
-attacks+=("ddrl_lexical_lcs_avg" "ddrl_lexical_lcs_best" "ddrl_lexical_lcs_ratio_avg" "ddrl_lexical_lcs_ratio_best" "ddrl_lexical_lcs_ratio_cand_avg" "ddrl_lexical_lcs_ratio_cand_best")
+attacks+=("adra_lexical_lcs_avg" "adra_lexical_lcs_best" "adra_lexical_lcs_ratio_avg" "adra_lexical_lcs_ratio_best" "adra_lexical_lcs_ratio_cand_avg" "adra_lexical_lcs_ratio_cand_best")
 metrics+=("lexical_lcs_len_avg" "lexical_lcs_len_best" "lexical_lcs_ratio_avg" "lexical_lcs_ratio_best" "lexical_lcs_ratio_cand_avg" "lexical_lcs_ratio_cand_best")
 
 # N-gram Coverage
-attacks+=("ddrl_lexical_ngram_coverage_avg" "ddrl_lexical_ngram_coverage_best" "ddrl_lexical_ngram_coverage_ref_avg" "ddrl_lexical_ngram_coverage_ref_best")
+attacks+=("adra_lexical_ngram_coverage_avg" "adra_lexical_ngram_coverage_best" "adra_lexical_ngram_coverage_ref_avg" "adra_lexical_ngram_coverage_ref_best")
 metrics+=("lexical_ngram_coverage_avg" "lexical_ngram_coverage_best" "lexical_ngram_coverage_ref_avg" "lexical_ngram_coverage_ref_best")
 
 # Embedding Cosine Similarity
-attacks+=("ddrl_q3_8b_embedding_cosine_sim_avg" "ddrl_q3_8b_embedding_cosine_sim_best")
+attacks+=("adra_q3_8b_embedding_cosine_sim_avg" "adra_q3_8b_embedding_cosine_sim_best")
 metrics+=("embedding_cosine_sim_avg" "embedding_cosine_sim_best")
 
-bash ${BASE_PATH}/scripts/eval/run_evaluation.sh \
+bash ${BASE_PATH}/Dataset_Distillation/adra/scripts/eval/run_evaluation.sh \
   "$save_path" \
   "$eval_match_json" \
+  --prefix-ratio 0.25 \
+  --embedding-model qwen3-8B \
   --mia-jsonl \
   --attack "${attacks[@]}" \
-  --score-metrics "${metrics[@]}" \
-  --prefix-ratio 0.25
+  --score-metrics "${metrics[@]}"
+
 
 for i in "${!attacks[@]}"; do
   attack="${attacks[$i]}"
-  python3 -m ddrl.scripts.evaluate_mia \
+  python3 -m adra.scripts.evaluate_mia \
     --members "${BASE_PATH}/eval/${eval_model_dir}/${attack}_members.jsonl" \
     --nonmembers "${BASE_PATH}/eval/${eval_model_dir}/${attack}_nonmembers.jsonl" \
     --output "${BASE_PATH}/eval/${eval_model_dir}/${attack}_metrics.json" \
@@ -132,19 +134,19 @@ done
 # 4. Full suffix metrics evaluation
 # ------------------------------------------------------------------------------
 
-attacks_orig=("ddrl_lexical_jaccard_sim_avg_original" "ddrl_lexical_jaccard_sim_best_original" "ddrl_lexical_token_overlap_ref_avg_original" "ddrl_lexical_token_overlap_ref_best_original" "ddrl_lexical_token_overlap_cand_avg_original" "ddrl_lexical_token_overlap_cand_best_original")
+attacks_orig=("adra_lexical_jaccard_sim_avg_original" "adra_lexical_jaccard_sim_best_original" "adra_lexical_token_overlap_ref_avg_original" "adra_lexical_token_overlap_ref_best_original" "adra_lexical_token_overlap_cand_avg_original" "adra_lexical_token_overlap_cand_best_original")
 metrics_orig=("lexical_jaccard_sim_avg" "lexical_jaccard_sim_best" "lexical_token_overlap_ref_avg" "lexical_token_overlap_ref_best" "lexical_token_overlap_cand_avg" "lexical_token_overlap_cand_best")
 
 # LCS (Longest Common Subsequence)
-attacks_orig+=("ddrl_lexical_lcs_avg_original" "ddrl_lexical_lcs_best_original" "ddrl_lexical_lcs_ratio_avg_original" "ddrl_lexical_lcs_ratio_best_original" "ddrl_lexical_lcs_ratio_cand_avg_original" "ddrl_lexical_lcs_ratio_cand_best_original")
+attacks_orig+=("adra_lexical_lcs_avg_original" "adra_lexical_lcs_best_original" "adra_lexical_lcs_ratio_avg_original" "adra_lexical_lcs_ratio_best_original" "adra_lexical_lcs_ratio_cand_avg_original" "adra_lexical_lcs_ratio_cand_best_original")
 metrics_orig+=("lexical_lcs_len_avg" "lexical_lcs_len_best" "lexical_lcs_ratio_avg" "lexical_lcs_ratio_best" "lexical_lcs_ratio_cand_avg" "lexical_lcs_ratio_cand_best")
 
 # N-gram Coverage
-attacks_orig+=("ddrl_lexical_ngram_coverage_avg_original" "ddrl_lexical_ngram_coverage_best_original" "ddrl_lexical_ngram_coverage_ref_avg_original" "ddrl_lexical_ngram_coverage_ref_best_original")
+attacks_orig+=("adra_lexical_ngram_coverage_avg_original" "adra_lexical_ngram_coverage_best_original" "adra_lexical_ngram_coverage_ref_avg_original" "adra_lexical_ngram_coverage_ref_best_original")
 metrics_orig+=("lexical_ngram_coverage_avg" "lexical_ngram_coverage_best" "lexical_ngram_coverage_ref_avg" "lexical_ngram_coverage_ref_best")
 
 # Embedding Cosine Similarity
-attacks_orig+=("ddrl_q3_8b_embedding_cosine_sim_avg_original" "ddrl_q3_8b_embedding_cosine_sim_best_original")
+attacks_orig+=("adra_q3_8b_embedding_cosine_sim_avg_original" "adra_q3_8b_embedding_cosine_sim_best_original")
 metrics_orig+=("embedding_cosine_sim_avg" "embedding_cosine_sim_best")
 
 bash ${BASE_PATH}/scripts/eval/run_evaluation.sh \
@@ -157,7 +159,7 @@ bash ${BASE_PATH}/scripts/eval/run_evaluation.sh \
 echo "=== Running MIA evaluation (full suffix) ==="
 for i in "${!attacks_orig[@]}"; do
   attack="${attacks_orig[$i]}"
-  python3 -m ddrl.scripts.evaluate_mia \
+  python3 -m adra.scripts.evaluate_mia \
     --members "${BASE_PATH}/eval/${eval_model_dir}/${attack}_members.jsonl" \
     --nonmembers "${BASE_PATH}/eval/${eval_model_dir}/${attack}_nonmembers.jsonl" \
     --output "${BASE_PATH}/eval/${eval_model_dir}/${attack}_metrics.json" \
@@ -168,7 +170,7 @@ done
 # 5. Extract AUROC scores
 # ------------------------------------------------------------------------------
 echo "=== Extracting AUROC scores ==="
-python3 ${BASE_PATH}/ddrl/utils/extract_mia_aurocs.py \
+python3 ${BASE_PATH}/adra/utils/extract_mia_aurocs.py \
   "${BASE_PATH}/eval/${eval_model_dir}"
 
 echo "Done. Results: ${BASE_PATH}/eval/${eval_model_dir}"

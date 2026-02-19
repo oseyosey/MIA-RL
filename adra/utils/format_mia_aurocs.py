@@ -88,6 +88,16 @@ def format_results(values: Dict[str, float], skip_missing: bool = True) -> str:
     if missing_pairs and skip_missing:
         print(f"⚠️  Skipped {len(missing_pairs)} missing pairs: {', '.join(missing_pairs)}", file=sys.stderr)
     
+    # Append summary stats (top1, top5_mean, top10_mean) if present
+    summary_parts = []
+    for key, label in [("top1", "top1"), ("top5_mean", "top5_mean"), ("top10_mean", "top10_mean")]:
+        v = values.get(key)
+        if v is not None:
+            summary_parts.append(f"{label}: {v:.2f}")
+    if summary_parts:
+        lines.append("")  # blank line before summary
+        lines.append("  ".join(summary_parts))
+    
     return "\n".join(lines)
 
 

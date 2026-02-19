@@ -48,8 +48,8 @@ OUTPUT_PATH="./outputs"
 PROJECT_NAME="verl_aime_adra_paraphrased_lora_h200_8"
 SFT_MODEL_PATH="ADRA-RL/tulu2-7b_aime_controlled_contamination_paraphrased"
 
-# export DDRL_USE_DYNAMIC_MAX_NGRAM=true # Use dynamic max_ngram for ngram coverage computation
-export DDRL_USE_PROCESS_POOL=true
+# export ADRA_USE_DYNAMIC_MAX_NGRAM=true # Use dynamic max_ngram for ngram coverage computation
+export ADRA_USE_PROCESS_POOL=true
 
 PROMPT_LENGTH=2048
 RESPONSE_LENGTH=2048 

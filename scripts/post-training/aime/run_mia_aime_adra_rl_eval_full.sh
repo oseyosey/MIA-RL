@@ -64,9 +64,9 @@ exp_name="verl_aime_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGME
 
 # Jaccard Similarity & token overlap
 attacks=(
-  "ddrl_lexical_jaccard_sim_avg" "ddrl_lexical_jaccard_sim_best"
-  "ddrl_lexical_token_overlap_ref_avg" "ddrl_lexical_token_overlap_ref_best"
-  "ddrl_lexical_token_overlap_cand_avg" "ddrl_lexical_token_overlap_cand_best"
+  "adra_lexical_jaccard_sim_avg" "adra_lexical_jaccard_sim_best"
+  "adra_lexical_token_overlap_ref_avg" "adra_lexical_token_overlap_ref_best"
+  "adra_lexical_token_overlap_cand_avg" "adra_lexical_token_overlap_cand_best"
 )
 metrics=(
   "lexical_jaccard_sim_avg" "lexical_jaccard_sim_best"
@@ -76,9 +76,9 @@ metrics=(
 
 # LCS (Longest Common Subsequence)
 attacks+=(
-  "ddrl_lexical_lcs_avg" "ddrl_lexical_lcs_best"
-  "ddrl_lexical_lcs_ratio_avg" "ddrl_lexical_lcs_ratio_best"
-  "ddrl_lexical_lcs_ratio_cand_avg" "ddrl_lexical_lcs_ratio_cand_best"
+  "adra_lexical_lcs_avg" "adra_lexical_lcs_best"
+  "adra_lexical_lcs_ratio_avg" "adra_lexical_lcs_ratio_best"
+  "adra_lexical_lcs_ratio_cand_avg" "adra_lexical_lcs_ratio_cand_best"
 )
 metrics+=(
   "lexical_lcs_len_avg" "lexical_lcs_len_best"
@@ -88,8 +88,8 @@ metrics+=(
 
 # N-gram Coverage
 attacks+=(
-  "ddrl_lexical_ngram_coverage_avg" "ddrl_lexical_ngram_coverage_best"
-  "ddrl_lexical_ngram_coverage_ref_avg" "ddrl_lexical_ngram_coverage_ref_best"
+  "adra_lexical_ngram_coverage_avg" "adra_lexical_ngram_coverage_best"
+  "adra_lexical_ngram_coverage_ref_avg" "adra_lexical_ngram_coverage_ref_best"
 )
 metrics+=(
   "lexical_ngram_coverage_avg" "lexical_ngram_coverage_best"
@@ -98,7 +98,7 @@ metrics+=(
 
 # Embedding Cosine Similarity
 attacks+=(
-  "ddrl_q3_8b_embedding_cosine_sim_avg" "ddrl_q3_8b_embedding_cosine_sim_best"
+  "adra_q3_8b_embedding_cosine_sim_avg" "adra_q3_8b_embedding_cosine_sim_best"
 )
 metrics+=(
   "embedding_cosine_sim_avg" "embedding_cosine_sim_best"
@@ -124,7 +124,7 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   # 1. Merge LoRA adapter into base model
   # ----------------------------------------------------------------------------
   echo "Step ${global_step}: Merging LoRA adapter..."
-  python ddrl/utils_rl/merge_lora.py \
+  python adra/utils_rl/merge_lora.py \
     --base_model   "$base_model" \
     --lora_adapter "$lora_adapter" \
     --output_dir   "$merged_model_dir" \
@@ -171,7 +171,7 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
 
   for i in "${!attacks[@]}"; do
     attack="${attacks[$i]}"
-    python3 -m ddrl.scripts.evaluate_mia \
+    python3 -m adra.scripts.evaluate_mia \
       --members "${BASE_PATH}/eval/${eval_model_dir}/${attack}_members.jsonl" \
       --nonmembers "${BASE_PATH}/eval/${eval_model_dir}/${attack}_nonmembers.jsonl" \
       --output "${BASE_PATH}/eval/${eval_model_dir}/${attack}_metrics.json" \
@@ -182,9 +182,9 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   # 4. Full suffix metrics evaluation
   # ----------------------------------------------------------------------------
   attacks_orig=(
-    "ddrl_lexical_jaccard_sim_avg_original" "ddrl_lexical_jaccard_sim_best_original"
-    "ddrl_lexical_token_overlap_ref_avg_original" "ddrl_lexical_token_overlap_ref_best_original"
-    "ddrl_lexical_token_overlap_cand_avg_original" "ddrl_lexical_token_overlap_cand_best_original"
+    "adra_lexical_jaccard_sim_avg_original" "adra_lexical_jaccard_sim_best_original"
+    "adra_lexical_token_overlap_ref_avg_original" "adra_lexical_token_overlap_ref_best_original"
+    "adra_lexical_token_overlap_cand_avg_original" "adra_lexical_token_overlap_cand_best_original"
   )
   metrics_orig=(
     "lexical_jaccard_sim_avg" "lexical_jaccard_sim_best"
@@ -193,9 +193,9 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   )
 
   attacks_orig+=(
-    "ddrl_lexical_lcs_avg_original" "ddrl_lexical_lcs_best_original"
-    "ddrl_lexical_lcs_ratio_avg_original" "ddrl_lexical_lcs_ratio_best_original"
-    "ddrl_lexical_lcs_ratio_cand_avg_original" "ddrl_lexical_lcs_ratio_cand_best_original"
+    "adra_lexical_lcs_avg_original" "adra_lexical_lcs_best_original"
+    "adra_lexical_lcs_ratio_avg_original" "adra_lexical_lcs_ratio_best_original"
+    "adra_lexical_lcs_ratio_cand_avg_original" "adra_lexical_lcs_ratio_cand_best_original"
   )
   metrics_orig+=(
     "lexical_lcs_len_avg" "lexical_lcs_len_best"
@@ -204,8 +204,8 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   )
 
   attacks_orig+=(
-    "ddrl_lexical_ngram_coverage_avg_original" "ddrl_lexical_ngram_coverage_best_original"
-    "ddrl_lexical_ngram_coverage_ref_avg_original" "ddrl_lexical_ngram_coverage_ref_best_original"
+    "adra_lexical_ngram_coverage_avg_original" "adra_lexical_ngram_coverage_best_original"
+    "adra_lexical_ngram_coverage_ref_avg_original" "adra_lexical_ngram_coverage_ref_best_original"
   )
   metrics_orig+=(
     "lexical_ngram_coverage_avg" "lexical_ngram_coverage_best"
@@ -213,7 +213,7 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   )
 
   attacks_orig+=(
-    "ddrl_q3_8b_embedding_cosine_sim_avg_original" "ddrl_q3_8b_embedding_cosine_sim_best_original"
+    "adra_q3_8b_embedding_cosine_sim_avg_original" "adra_q3_8b_embedding_cosine_sim_best_original"
   )
   metrics_orig+=(
     "embedding_cosine_sim_avg" "embedding_cosine_sim_best"
@@ -229,7 +229,7 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   echo "=== Running MIA evaluation (full suffix) ==="
   for i in "${!attacks_orig[@]}"; do
     attack="${attacks_orig[$i]}"
-    python3 -m ddrl.scripts.evaluate_mia \
+    python3 -m adra.scripts.evaluate_mia \
       --members "${BASE_PATH}/eval/${eval_model_dir}/${attack}_members.jsonl" \
       --nonmembers "${BASE_PATH}/eval/${eval_model_dir}/${attack}_nonmembers.jsonl" \
       --output "${BASE_PATH}/eval/${eval_model_dir}/${attack}_metrics.json" \
@@ -240,7 +240,7 @@ for global_step in 10 20 30 40 50 60 70 80 90 100; do
   # 5. Extract AUROC scores
   # ----------------------------------------------------------------------------
   echo "=== Extracting AUROC scores ==="
-  python3 ${BASE_PATH}/ddrl/utils/extract_mia_aurocs.py \
+  python3 ${BASE_PATH}/adra/utils/extract_mia_aurocs.py \
     "${BASE_PATH}/eval/${eval_model_dir}"
 
   echo "Step ${global_step} done. Results: ${BASE_PATH}/eval/${eval_model_dir}"

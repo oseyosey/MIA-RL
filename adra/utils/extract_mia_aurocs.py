@@ -68,23 +68,25 @@ def extract_aurocs(metrics_dir: Path) -> List[Dict[str, float]]:
     return results
 
 
-def write_csv(results: List[Dict[str, float]], output_path: Path, top5_mean: float, top10_mean: float):
+def write_csv(results: List[Dict[str, float]], output_path: Path, top1: float, top5_mean: float, top10_mean: float):
     """Write results to CSV file."""
     with open(output_path, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['attack', 'auroc'])
         writer.writeheader()
         writer.writerows(results)
         # Add summary rows
+        writer.writerow({'attack': 'top1', 'auroc': top1})
         writer.writerow({'attack': 'top5_mean', 'auroc': top5_mean})
         writer.writerow({'attack': 'top10_mean', 'auroc': top10_mean})
 
 
-def write_jsonl(results: List[Dict[str, float]], output_path: Path, top5_mean: float, top10_mean: float):
+def write_jsonl(results: List[Dict[str, float]], output_path: Path, top1: float, top5_mean: float, top10_mean: float):
     """Write results to JSONL file."""
     with open(output_path, 'w') as f:
         for result in results:
             f.write(json.dumps(result) + '\n')
         # Add summary entries
+        f.write(json.dumps({'attack': 'top1', 'auroc': top1}) + '\n')
         f.write(json.dumps({'attack': 'top5_mean', 'auroc': top5_mean}) + '\n')
         f.write(json.dumps({'attack': 'top10_mean', 'auroc': top10_mean}) + '\n')
 
@@ -127,11 +129,11 @@ def main():
         print("No results to write.")
         return
     
-    # Calculate top 5 and top 10 mean accuracy
+    # Calculate top 1 (best), top 5 and top 10 mean
     aurocs = [r['auroc'] for r in results]
     sorted_aurocs = sorted(aurocs, reverse=True)
     
-    # Calculate means
+    top1 = round(sorted_aurocs[0], 2) if sorted_aurocs else 0.0
     top5_mean = round(sum(sorted_aurocs[:5]) / min(5, len(sorted_aurocs)), 2) if sorted_aurocs else 0.0
     top10_mean = round(sum(sorted_aurocs[:10]) / min(10, len(sorted_aurocs)), 2) if sorted_aurocs else 0.0
     
@@ -143,9 +145,9 @@ def main():
     
     # Write results
     if args.format == 'csv':
-        write_csv(results, output_path, top5_mean, top10_mean)
+        write_csv(results, output_path, top1, top5_mean, top10_mean)
     else:
-        write_jsonl(results, output_path, top5_mean, top10_mean)
+        write_jsonl(results, output_path, top1, top5_mean, top10_mean)
     
     print(f"✅ Extracted {len(results)} AUROC scores to {output_path}")
     
@@ -153,6 +155,7 @@ def main():
     if results:
         print(f"   AUROC range: {min(aurocs):.2f}% - {max(aurocs):.2f}%")
         print(f"   Mean AUROC: {sum(aurocs) / len(aurocs):.2f}%")
+        print(f"   Top 1 (best) AUROC: {top1:.2f}%")
         print(f"   Top 5 mean AUROC: {top5_mean:.2f}%")
         print(f"   Top 10 mean AUROC: {top10_mean:.2f}%")
 

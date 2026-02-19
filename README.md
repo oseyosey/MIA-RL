@@ -34,21 +34,39 @@ All trainings & evaluations were done on a single node with 8 H200s. Hyperparame
 
 ### Installation
 
-```bash
-# 1. Create and activate a fresh conda env
-conda create -n adra python=3.10
-conda activate adra
+We provide two environment configs. Our paper uses both to support multiple models, so we recommend setting up both environments. 
 
-# 2. Clone the repo
+> We found that different vLLM versions can produce slightly different outputs due to changes in CUDA kernels, model implementations, and scheduling optimizations. We recommend fixing one environment to run any given datasets.
+
+#### Option A: `adra-v1` — vLLM 0.11.0
+
+Primary environment with broader model support. Used for OLMo 3, distillation, and some ADRA+ experiments in the paper.
+
+```bash
+conda create -n adra-v1 python=3.10
+conda activate adra-v1
+
 git clone https://github.com/oseyosey/MIA-RL.git
 cd MIA-RL
 
-# 3. Run the install script (review it first — you may need to update
-#    module names, CUDA paths, and conda paths for your system)
-bash adra_setup.sh
+bash adra_v1_setup.sh
 ```
 
-> **Note:** Before running `adra_setup.sh`, open it and update the system-specific lines at the top (GCC/CUDA module names, `CUDA_HOME` path, and conda path) to match your system / cluster. See [`requirements.txt`](requirements.txt) for the full list of pinned package versions.
+> **Note:** Before running the setup script, open it and update the system-specific lines at the top (GCC/CUDA module names, `CUDA_HOME` path, and conda path) to match your system / cluster. See [`requirements.txt`](requirements.txt) for the full list of pinned package versions.
+
+#### Option B: `adra-v0` — vLLM 0.8.5.post1
+
+Older environment used for most pre-training and post-training ADRA experiments in the paper. We found that different vLLM versions can produce slightly different sampling results, so we keep this environment available for reference. 
+
+```bash
+conda create -n adra-v0 python=3.10
+conda activate adra-v0
+
+git clone https://github.com/oseyosey/MIA-RL.git
+cd MIA-RL
+
+bash adra_v0_setup.sh
+```
 
 
 # ADRA Usage
@@ -75,7 +93,7 @@ Datasets and models are released at [huggingface.co/ADRA-RL](https://huggingface
 
 ## Evaluation
 
-1. **MIA baselines** -- Run standard attacks (loss, zlib, min-k, min-k++, gradnorm, ref) on the SFT model:
+1. **MIA baselines** -- Run standard attacks (loss, zlib, min-k, min-k++, ref) on the SFT model:
    ```bash
    bash scripts/post-training/aime/run_mia_aime_original_baselines.sh
    ```

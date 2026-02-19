@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# e.g. DATA_PATH="/gpfs/scrubbed/osey/MIA-RL/data"
+# e.g. EVAL_PATH="/gpfs/scrubbed/osey/MIA-RL/eval"
 DATA_PATH=""
 EVAL_PATH=""
 
@@ -19,7 +21,6 @@ declare -a ATTACKS=(
   "zlib"
   "min_k"
   "min_k++"
-  "gradnorm"
 )
 
 # Optional reference-based attack if a small ref model is available
@@ -29,7 +30,7 @@ REF_MODEL="allenai/tulu-2-7b"
 ### * NON-REFERENCE BASED ATTACKS * ###
 for ATTACK in "${ATTACKS[@]}"; do
   echo "Attack: $ATTACK (members)"
-  python -m ddrl.scripts.run_mia \
+  python -m adra.scripts.run_mia \
     --model "$MODEL" \
     --dataset "$MEMBERS_FILE" \
     --attack "$ATTACK" \
@@ -38,7 +39,7 @@ for ATTACK in "${ATTACKS[@]}"; do
     --verbose
 
   echo "Attack: $ATTACK (nonmembers)"
-  python -m ddrl.scripts.run_mia \
+  python -m adra.scripts.run_mia \
     --model "$MODEL" \
     --dataset "$NONMEMBERS_FILE" \
     --attack "$ATTACK" \
@@ -48,13 +49,13 @@ for ATTACK in "${ATTACKS[@]}"; do
 
   echo "Evaluate: $ATTACK"
   if [[ "$ATTACK" == "gradnorm" ]]; then
-    python -m ddrl.scripts.evaluate_mia \
+    python -m adra.scripts.evaluate_mia \
       --members "$OUT_DIR/${ATTACK}_members.jsonl" \
       --nonmembers "$OUT_DIR/${ATTACK}_nonmembers.jsonl" \
       --output "$OUT_DIR/${ATTACK}_metrics.json" \
       --higher-is-member
   else
-    python -m ddrl.scripts.evaluate_mia \
+    python -m adra.scripts.evaluate_mia \
       --members "$OUT_DIR/${ATTACK}_members.jsonl" \
       --nonmembers "$OUT_DIR/${ATTACK}_nonmembers.jsonl" \
       --output "$OUT_DIR/${ATTACK}_metrics.json"
@@ -65,7 +66,7 @@ done
 ### * REFERENCE-BASED ATTACKS * ###
 # Reference-based attack (optional; uses same tiny model as reference for smoke test) 
 echo "Attack: ref (members)"
-python -m ddrl.scripts.run_mia \
+python -m adra.scripts.run_mia \
   --model "$MODEL" \
   --dataset "$MEMBERS_FILE" \
   --reference-model "$REF_MODEL" \
@@ -74,7 +75,7 @@ python -m ddrl.scripts.run_mia \
   --output "$OUT_DIR/${ATTACK_REF}_members.jsonl"
 
 echo "Attack: ref (nonmembers)"
-python -m ddrl.scripts.run_mia \
+python -m adra.scripts.run_mia \
   --model "$MODEL" \
   --dataset "$NONMEMBERS_FILE" \
   --reference-model "$REF_MODEL" \
@@ -83,7 +84,7 @@ python -m ddrl.scripts.run_mia \
   --output "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl"
 
 echo "Evaluate: ref"
-python -m ddrl.scripts.evaluate_mia \
+python -m adra.scripts.evaluate_mia \
   --members "$OUT_DIR/${ATTACK_REF}_members.jsonl" \
   --nonmembers "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl" \
   --output "$OUT_DIR/${ATTACK_REF}_metrics.json"
