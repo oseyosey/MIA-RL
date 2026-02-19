@@ -29,18 +29,51 @@ All trainings & evaluations are done in a single node consisting of 8 H200s. As 
 
 # ADRA Usage
 
+Below we walk through the AIME post-training pipeline as a quick-start example. See [`scripts/README.md`](scripts/README.md) for the full step-by-step guide and per-script documentation.
 
 ## Training
 
-Below, we will walk you through an example of AIME for post-training data detection. 
+1. **Prepare data** -- Build the MIA training parquet (member/non-member splits, lexical reward profiles, optional MIA weighting for ADRA+):
+   ```bash
+   bash scripts/post-training/aime/prepare_aime_mia_data_lexical_adra.sh        # ADRA
+   bash scripts/post-training/aime/prepare_aime_mia_data_lexical_adra-plus.sh    # ADRA+
+   ```
+
+2. **Launch RL training** (GRPO with lexical reward, Slurm):
+   ```bash
+   sbatch scripts/post-training/aime/submit_run_aime_adra_original_lora_h200_8.sh
+   # or bash
+   bash scripts/post-training/aime/submit_run_aime_adra_original_lora_h200_8.sh
+   ```
 
 
-We release datasets and models at . You can download the datasets and models at https://huggingface.co/ADRA-RL  and run on our evaluation scripts for reproduction. 
+Datasets and models are released at [huggingface.co/ADRA-RL](https://huggingface.co/ADRA-RL). You may also skip training and directly download the checkpoints for evaluation.
 
 ## Evaluation
 
-To evaluate, you 
+1. **MIA baselines** -- Run standard attacks (loss, zlib, min-k, min-k++, gradnorm, ref) on the SFT model:
+   ```bash
+   bash scripts/post-training/aime/run_mia_aime_original_baselines.sh
+   ```
 
-Again, we will walk you through an example of AIME for post-training data detection. 
+2. **N-sampling eval** -- Generate `n` samples from the SFT model and compute lexical MIA metrics:
+   ```bash
+   bash scripts/post-training/aime/run_mia_aime_n-sampling_eval.sh
+   ```
 
+3. **RL checkpoint eval** -- Merge a LoRA checkpoint into the base model, generate, and evaluate:
+   - **Full sweep** (loops over global steps): `run_mia_aime_adra_rl_eval_full.sh`
+   - **Quick eval** (single HF checkpoint): `run_mia_aime_adra_rl_eval_quick.sh`
+
+## Adapting to your own dataset
+
+We provide three dataset-agnostic **boilerplate scripts** at `scripts/` that you can copy and fill in for a new dataset:
+
+| Script | What it does |
+|--------|--------------|
+| [`run_mia_baselines.sh`](scripts/run_mia_baselines.sh) | Run MIA baseline attacks on any member/non-member split |
+| [`run_mia_n-sampling_eval.sh`](scripts/run_mia_n-sampling_eval.sh) | Generate samples and compute lexical MIA metrics |
+| [`run_mia_rl_eval_quick.sh`](scripts/run_mia_rl_eval_quick.sh) | End-to-end: merge LoRA, generate, and evaluate |
+
+Each contains `TODO` placeholders for paths and model IDs. See [`scripts/README.md`](scripts/README.md) for details on what to fill in.
 

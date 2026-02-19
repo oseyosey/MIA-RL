@@ -1,0 +1,136 @@
+#!/bin/bash
+#SBATCH -J AIME_ADRA_PLUS_PARAPHRASED_LORA_H200_8  # Job name
+#SBATCH -o slurm_out/AIME_ADRA_PLUS_PARAPHRASED_LORA_H200_8.o%j    # Name of stdout output file (%j expands to jobId)
+#SBATCH -e slurm_out/AIME_ADRA_PLUS_PARAPHRASED_LORA_H200_8.e%j    # Name of stderr output file
+#SBATCH -N 1   # Total number of CPU nodes requested
+#SBATCH -n 8   # Total number of CPU cores requrested
+#SBATCH --mem=1200gb    # CPU Memory pool for all cores
+#SBATCH -t 24:00:00    # Run time (hh:mm:ss)
+#SBATCH --requeue
+#SBATCH --account=
+#SBATCH --partition=gpu-h200 --gpus=8 --nodes=1   # Request 8 GPUs on a single node
+                                               # --partition=<queue> - Use the `<queue>` queue
+                                               # --gres=gpu:1 - Use 1 GPU of any type
+                                               # --gres=gpu:1080ti:1 - Use 1 GTX 1080TI GPU
+
+nvidia-smi
+# Ensure CUDA toolkit (nvcc) is available on compute nodes.
+module load gcc/13.4.0
+module load cuda/12.9.1
+export CUDA_HOME="/gpfs/software/cuda/12.9.1"
+export PATH="${CUDA_HOME}/bin:${PATH}"
+export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+export VLLM_ALLREDUCE_USE_SYMM_MEM=0
+
+
+unset ROCR_VISIBLE_DEVICES # might need this for specific clusters
+
+set -x
+
+# Define list of prompt templates to iterate through
+LEXICAL_METRIC_TEMPLATES=("unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max")  # Add your desired prompt template values here
+AUGMENT_SAMPLING_METHOD="random"
+AUGMENT_NUM_SAMPLES=7
+
+n_gpus=8
+n_cpus=80
+
+# Set hyper-parameters
+temperature=1.0
+top_p=0.95
+top_k=50
+seed=1
+rollout_n=32
+
+# Define output path and experiment name for rollout data directory
+OUTPUT_PATH="./outputs"
+PROJECT_NAME="verl_aime_adra-plus_paraphrased_lora_h200_8"
+SFT_MODEL_PATH="ADRA-RL/tulu2-7b_aime_controlled_contamination_paraphrased"
+
+export DDRL_USE_DYNAMIC_MAX_NGRAM=true
+export DDRL_USE_PROCESS_POOL=true
+
+PROMPT_LENGTH=2048
+RESPONSE_LENGTH=2048 
+
+# Loop through each prompt template
+for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
+    echo "Starting training with PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
+    
+    # Set template-specific variables
+    DATA_DIR="DATA_PATH/aime_rl/aime_16_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_min_k++_weighted_prefix_0.25"
+    EXP_NAME="verl_aime_adra-plus_paraphrased_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr3e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
+        
+    echo "Data directory: $DATA_DIR"
+    echo "Experiment name: $EXP_NAME"
+    
+    # Check if data directory exists
+    if [ ! -d "$DATA_DIR" ]; then
+        echo "Warning: Data directory $DATA_DIR does not exist. Skipping $PROMPT_TEMPLATE"
+        continue
+    fi
+    
+    python3 -m verl.trainer.main_ppo \
+        ray_init.num_cpus=${n_cpus} \
+        algorithm.adv_estimator=grpo \
+        reward_model.reward_manager=batch \
+        reward_model.reward_kwargs.truncate_prefix_ratio=0.25 \
+        reward_model.reward_kwargs.num_workers=1 \
+        data.assistant_prefix_key=assistant_prefix \
+        data.train_files="$DATA_DIR"/train.parquet \
+        data.val_files="$DATA_DIR"/train.parquet \
+        data.train_batch_size=32 \
+        data.max_prompt_length=${PROMPT_LENGTH} \
+        data.max_response_length=${RESPONSE_LENGTH} \
+        data.filter_overlong_prompts=True \
+        data.truncation='error' \
+        actor_rollout_ref.model.lora_rank=64 \
+        actor_rollout_ref.model.lora_alpha=128 \
+        actor_rollout_ref.model.path="$SFT_MODEL_PATH" \
+        actor_rollout_ref.actor.optim.lr=3e-5 \
+        actor_rollout_ref.model.use_remove_padding=True \
+        actor_rollout_ref.actor.ppo_mini_batch_size=32 \
+        actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=32 \
+        actor_rollout_ref.actor.use_kl_loss=True \
+        actor_rollout_ref.actor.kl_loss_coef=0.005 \
+        actor_rollout_ref.actor.kl_loss_type=low_var_kl \
+        actor_rollout_ref.actor.entropy_coeff=0 \
+        actor_rollout_ref.model.enable_gradient_checkpointing=True \
+        actor_rollout_ref.actor.fsdp_config.param_offload=True \
+        actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
+        actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=64 \
+        actor_rollout_ref.rollout.tensor_model_parallel_size=${n_gpus} \
+        actor_rollout_ref.rollout.name=vllm \
+        actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
+        actor_rollout_ref.rollout.n=${rollout_n} \
+        actor_rollout_ref.rollout.disable_log_stats=False \
+        actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=64 \
+        actor_rollout_ref.ref.fsdp_config.param_offload=True \
+        algorithm.use_kl_in_reward=False \
+        trainer.critic_warmup=0 \
+        trainer.logger=['console','wandb'] \
+        trainer.project_name=${PROJECT_NAME} \
+        trainer.experiment_name=${EXP_NAME} \
+        trainer.n_gpus_per_node=${n_gpus} \
+        trainer.nnodes=1 \
+        trainer.save_freq=10 \
+        trainer.test_freq=-1 \
+        trainer.total_epochs=100 "$@" \
+        trainer.rollout_data_dir=${OUTPUT_PATH}/${EXP_NAME}/rollout_data \
+        actor_rollout_ref.rollout.temperature=${temperature} \
+        actor_rollout_ref.rollout.top_p=${top_p} \
+        actor_rollout_ref.rollout.top_k=${top_k}
+    
+    # Check if training was successful
+    if [ $? -eq 0 ]; then
+        echo "Training completed successfully for PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
+    else
+        echo "Training failed for PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
+    fi
+    
+    echo "Finished training with PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
+    echo "----------------------------------------"
+done
+
+echo "All training runs completed!"
