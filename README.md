@@ -24,7 +24,31 @@ For detailed setup and usage instructions, see the README files in each subdirec
 
 # Set-up
 
-All trainings & evaluations are done in a single node consisting of 8 H200s. As such, the hyperparamters set in the scripts may need to be updated depending on your computational constraint and set up. 
+All trainings & evaluations were done on a single node with 8 H200s. Hyperparameters in the scripts may need adjusting for your hardware.
+
+### Prerequisites
+
+- NVIDIA GPU(s) with CUDA 12.x compatible drivers
+- [Conda](https://docs.conda.io/en/latest/miniconda.html) (Miniconda or Anaconda)
+- GCC and CUDA toolkit accessible via your system or module manager
+
+### Installation
+
+```bash
+# 1. Create and activate a fresh conda env
+conda create -n adra python=3.10
+conda activate adra
+
+# 2. Clone the repo
+git clone https://github.com/oseyosey/MIA-RL.git
+cd MIA-RL
+
+# 3. Run the install script (review it first — you may need to update
+#    module names, CUDA paths, and conda paths for your system)
+bash adra_setup.sh
+```
+
+> **Note:** Before running `adra_setup.sh`, open it and update the system-specific lines at the top (GCC/CUDA module names, `CUDA_HOME` path, and conda path) to match your system / cluster. See [`requirements.txt`](requirements.txt) for the full list of pinned package versions.
 
 
 # ADRA Usage
