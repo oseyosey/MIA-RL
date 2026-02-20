@@ -34,13 +34,13 @@ All trainings & evaluations were done on a single node with 8 H200s. Hyperparame
 
 ### Installation
 
-We provide two environment configs. Our paper uses both to support multiple models, so we recommend setting up both environments. 
+We provide two environment configs. Our paper uses both to support multiple models, so we recommend setting up both environments for reproductions. 
 
-> We found that different vLLM versions can produce slightly different outputs due to changes in CUDA kernels, model implementations, and scheduling optimizations. We recommend fixing one environment to run any given datasets.
+> Note that different vLLM & torch & transformers versions can produce slightly different outputs due to changes in CUDA kernels, model implementations, and scheduling optimizations. We recommend fixing one environment to run any given datasets.
 
-#### Option A: `adra-v1` — vLLM 0.11.0
+#### `adra-v1` — vLLM 0.11.0
 
-Primary environment with broader model support. Used for OLMo 3, distillation, and some ADRA+ experiments in the paper.
+Environment with latest model support (Olmo3). Used for OLMo 3, distillation, ablations, and some ADRA+ experiments in the paper.
 
 ```bash
 conda create -n adra-v1 python=3.10
@@ -54,9 +54,9 @@ bash adra_v1_setup.sh
 
 > **Note:** Before running the setup script, open it and update the system-specific lines at the top (GCC/CUDA module names, `CUDA_HOME` path, and conda path) to match your system / cluster. See [`requirements.txt`](requirements.txt) for the full list of pinned package versions.
 
-#### Option B: `adra-v0` — vLLM 0.8.5.post1
+#### `adra-v0` — vLLM 0.8.5.post1
 
-Older environment used for most pre-training and post-training ADRA experiments in the paper. We found that different vLLM versions can produce slightly different sampling results, so we keep this environment available for reference. 
+Older environment used for most pre-training and post-training ADRA and ADRA+ experiments in the paper. We found that different vLLM versions can produce slightly different sampling results, so we keep this environment available for reference and reproductions.
 
 ```bash
 conda create -n adra-v0 python=3.10

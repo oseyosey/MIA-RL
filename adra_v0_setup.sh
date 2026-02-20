@@ -8,10 +8,7 @@ pip install --no-deps -e .
 cd ..
 
 # adra dependencies.
-pip install trl==0.19.1 python-Levenshtein rank_bm25 math_verify antlr4-python3-runtime==4.13.2 scikit-learn evaluate seaborn nvidia-ml-py rich peft==0.17.1 sentence-transformers==5.2.0
+pip install sentence-transformers==5.2.3
 
 # important! no dependency 
 pip install --no-deps -e .
-
-
-pip install omegaconf==2.3.0 # handle *Exception: Could not deserialize ATN with version 3 (expected 4).

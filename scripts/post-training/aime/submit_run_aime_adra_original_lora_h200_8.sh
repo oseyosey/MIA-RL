@@ -16,7 +16,9 @@
 
 nvidia-smi
 
+
 # Ensure CUDA toolkit (nvcc) is available on compute nodes.
+# Need this section if using adra-v1 environment
 module load gcc/13.4.0
 module load cuda/12.9.1
 export CUDA_HOME="/gpfs/software/cuda/12.9.1"

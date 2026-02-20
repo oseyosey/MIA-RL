@@ -11,14 +11,17 @@
 set -euo pipefail
 set -x
 
+#* USE ADRA-V0 ENVIRONMENT for AIME *#
+
 # Ensure CUDA toolkit (nvcc) is available on compute nodes.
-module load gcc/13.4.0
-module load cuda/12.9.1
-export CUDA_HOME="/gpfs/software/cuda/12.9.1"
-export PATH="${CUDA_HOME}/bin:${PATH}"
-export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
-export CUDA_DEVICE_MAX_CONNECTIONS=1
-export VLLM_ALLREDUCE_USE_SYMM_MEM=0
+# Uncomment this section if using adra-v1 environment
+# module load gcc/13.4.0
+# module load cuda/12.9.1
+# export CUDA_HOME="/gpfs/software/cuda/12.9.1"
+# export PATH="${CUDA_HOME}/bin:${PATH}"
+# export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
+# export CUDA_DEVICE_MAX_CONNECTIONS=1
+# export VLLM_ALLREDUCE_USE_SYMM_MEM=0
 
 # ------------------------------------------------------------------------------
 # User-tweakable arguments
