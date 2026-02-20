@@ -82,7 +82,9 @@ After RL training, evaluate the resulting LoRA checkpoints.
 
 ## Boilerplate scripts
 
-The three scripts at `scripts/` are **dataset-agnostic** versions of the core evaluation steps. They contain the same logic as the AIME-specific scripts but with all dataset/model values replaced by `TODO` placeholders. Use them as starting points when adapting the pipeline to your own dataset.
+The three scripts at `scripts/` are **dataset-agnostic** versions of the core evaluation steps. They contain the same logic as the AIME-specific scripts but with all dataset/model values replaced by `TODO` placeholders. 
+
+You can use them to evaluate the RL lora models that we released or as starting points when adapting the pipeline to your own dataset.
 
 ### `run_mia_baselines.sh`
 

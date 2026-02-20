@@ -9,8 +9,6 @@
 set -euo pipefail
 set -x
 
-#* USE ADRA-V0 ENVIRONMENT for AIME *#
-
 # Ensure CUDA toolkit (nvcc) is available on compute nodes.
 # Uncomment this section if using adra-v1 environment
 # module load gcc/13.4.0
@@ -29,14 +27,14 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="ADRA-RL/data/aime_rl/aime_16_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_seed1_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_paraphrased_rl_lexical_trio_v3_unique_ratio_2.0_mia_adaptive_match_linear_distractor_max_augment_random_7_seed1_min_k++_weighted_prefix_0.25/train.parquet"
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)
-model_dir="ADRA-RL/tulu2-7b_aime_controlled_contamination_original"
+model_dir="ADRA-RL/tulu2-7b_olympiads_controlled_contamination_paraphrased"
 
 # TODO: Set the output directory name for evaluation artifacts
-eval_model_dir="tulu2-7b_aime_controlled_contamination_original_n-sampling"
+eval_model_dir="tulu2-7b_olympiads_controlled_contamination_paraphrased_n-sampling"
 
 n_gpus=8
 
@@ -46,8 +44,8 @@ top_p=0.95
 top_k=50
 n_samples=32
 
-PROMPT_LENGTH=2048
-RESPONSE_LENGTH=2048
+PROMPT_LENGTH=1024
+RESPONSE_LENGTH=3072
 
 # Output artifacts
 save_path="${BASE_PATH}/eval/${eval_model_dir}/generations_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_prefix_0.25.parquet"
@@ -57,7 +55,7 @@ eval_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temp
 # ------------------------------------------------------------------------------
 # 1. Generate samples
 # ------------------------------------------------------------------------------
-unset ROCR_VISIBLE_DEVICES || true  # might need this for specific clusters
+unset ROCR_VISIBLE_DEVICES || true
 
 python3 -m verl.trainer.main_generation \
     trainer.nnodes=1 \

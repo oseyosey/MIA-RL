@@ -33,10 +33,10 @@ BASE_PATH=""
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)
-model_dir="ADRA-RL/tulu2-7b_aime_controlled_contamination_original"
+model_dir="ADRA-RL/tulu2-7b_aime_controlled_contamination_paraphrased"
 
 # TODO: Set the output directory name for evaluation artifacts
-eval_model_dir="tulu2-7b_aime_controlled_contamination_original_n-sampling"
+eval_model_dir="tulu2-7b_aime_controlled_contamination_paraphrased_n-sampling"
 
 n_gpus=8
 
