@@ -21,7 +21,6 @@ declare -a ATTACKS=(
   "zlib"
   "min_k"
   "min_k++"
-  "gradnorm"
 )
 
 # Optional reference-based attack if a small ref model is available

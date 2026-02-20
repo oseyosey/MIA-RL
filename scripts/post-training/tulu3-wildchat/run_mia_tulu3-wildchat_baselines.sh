@@ -6,15 +6,15 @@ set -euo pipefail
 DATA_PATH=""
 EVAL_PATH=""
 
-MODEL="ADRA-RL/tulu2-7b_olympiads_controlled_contamination_original"
-DATA_DIR="$DATA_PATH/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_seed2_prefix_0.25"
-OUT_DIR="$EVAL_PATH/mia_olympiads_original_baselines"
-MEMBERS_FILE="$DATA_DIR/olympiads_32_members.jsonl"
-NONMEMBERS_FILE="$DATA_DIR/olympiads_32_nonmembers.jsonl"
+MODEL="allenai/Llama-3.1-Tulu-3-8B"
+DATA_DIR="$DATA_PATH/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_seed2_prefix_0.25"
+OUT_DIR="$EVAL_PATH/mia_tulu3-wildchat_baselines"
+MEMBERS_FILE="$DATA_DIR/wildchat_64_members.jsonl"
+NONMEMBERS_FILE="$DATA_DIR/wildchat_64_nonmembers.jsonl"
 mkdir -p "$OUT_DIR"
 
 
-echo "Running MIA baselines on toy data with model: $MODEL"
+echo "Running MIA baselines with model: $MODEL"
 
 declare -a ATTACKS=(
   "loss"
@@ -24,8 +24,8 @@ declare -a ATTACKS=(
 )
 
 # Optional reference-based attack if a small ref model is available
-ATTACK_REF="loss_ref_tulu2-7b"
-REF_MODEL="allenai/tulu-2-7b"
+ATTACK_REF="loss_ref_llama3.1_8b"
+REF_MODEL="meta-llama/Llama-3.1-8B"
 
 ### * NON-REFERENCE BASED ATTACKS * ###
 for ATTACK in "${ATTACKS[@]}"; do
@@ -64,7 +64,7 @@ done
 
 
 ### * REFERENCE-BASED ATTACKS * ###
-# Reference-based attack (optional; uses same tiny model as reference for smoke test)
+# Reference-based attack (optional)
 echo "Attack: ref (members)"
 python -m adra.scripts.run_mia \
   --model "$MODEL" \
