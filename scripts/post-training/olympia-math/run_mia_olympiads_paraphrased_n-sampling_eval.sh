@@ -27,7 +27,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_paraphrased_rl_lexical_trio_v3_unique_ratio_2.0_mia_adaptive_match_linear_distractor_max_augment_random_7_seed1_min_k++_weighted_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_paraphrased_rl_lexical_trio_v3_unique_ratio_2.0_mia_adaptive_match_linear_distractor_max_augment_random_7_min_k++_weighted_prefix_0.25/train.parquet"
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)

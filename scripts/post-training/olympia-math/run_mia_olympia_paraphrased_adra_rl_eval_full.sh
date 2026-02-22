@@ -29,7 +29,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_paraphrased_rl_lexical_unique_ngram_coverage_ref_ratio_2.0_mia_adaptive_match_linear_distractor_max_augment_random_7_seed1_min_k++_weighted_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_paraphrased_rl_lexical_unique_ngram_coverage_ref_ratio_2.0_mia_adaptive_match_linear_distractor_max_augment_random_7_min_k++_weighted_prefix_0.25/train.parquet"
 data_path=""
 
 n_gpus=8
@@ -55,9 +55,8 @@ lora_base_path=""
 PROMPT_TEMPLATE="trio_v3_unique_ratio_2.0_mia_adaptive_match_linear_distractor_max"
 AUGMENT_SAMPLING_METHOD="random"
 AUGMENT_NUM_SAMPLES=7
-seed=1
 rollout_n=32
-exp_name="verl_olympiads_adra_paraphrased_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr3e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
+exp_name="verl_olympiads_adra_paraphrased_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr3e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
 
 # ------------------------------------------------------------------------------
 # Attack/metric definitions (used across all global steps)

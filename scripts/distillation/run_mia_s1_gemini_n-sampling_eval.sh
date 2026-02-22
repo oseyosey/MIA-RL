@@ -27,14 +27,14 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/s1_rl/s1_gemini_rl_lexical_trio_v3_unique_ratio_penalty_1.50/train.parquet"
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)
-model_dir="ADRA-RL/tulu2-7b_olympiads_controlled_contamination_original"
+model_dir="ADRA-RL/qwen2.5-7b-instrct_s1_gemini-r1_distillation_original"
 
 # TODO: Set the output directory name for evaluation artifacts
-eval_model_dir="tulu2-7b_olympiads_controlled_contamination_original_n-sampling"
+eval_model_dir="mia_s1_gemini_n-sampling"
 
 n_gpus=8
 
@@ -42,15 +42,15 @@ n_gpus=8
 temperature=1.0
 top_p=0.95
 top_k=50
-n_samples=32
+n_samples=16
 
 PROMPT_LENGTH=1024
-RESPONSE_LENGTH=3072
+RESPONSE_LENGTH=7168
 
 # Output artifacts
-save_path="${BASE_PATH}/eval/${eval_model_dir}/generations_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_prefix_0.25.parquet"
-eval_match_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_prefix_0.25_match.json"
-eval_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_prefix_0.25.json"
+save_path="${BASE_PATH}/eval/${eval_model_dir}/generations_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}.parquet"
+eval_match_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}_match.json"
+eval_json="${BASE_PATH}/eval/${eval_model_dir}/mia_budget${n_samples}_temp${temperature}_topp${top_p}_topk${top_k}.json"
 
 # ------------------------------------------------------------------------------
 # 1. Generate samples
@@ -60,8 +60,7 @@ unset ROCR_VISIBLE_DEVICES || true
 python3 -m verl.trainer.main_generation \
     trainer.nnodes=1 \
     trainer.n_gpus_per_node=${n_gpus} \
-    data.assistant_prefix_key=assistant_prefix \
-    data.batch_size=512 \
+    data.batch_size=256 \
     data.path="$data_path" \
     data.prompt_key=prompt \
     data.n_samples=$n_samples \
@@ -73,7 +72,7 @@ python3 -m verl.trainer.main_generation \
     rollout.top_p=$top_p \
     rollout.prompt_length=${PROMPT_LENGTH} \
     rollout.response_length=${RESPONSE_LENGTH} \
-    rollout.tensor_model_parallel_size=${n_gpus} \
+    rollout.tensor_model_parallel_size=4 \
     rollout.gpu_memory_utilization=0.95 \
     ray_init.num_cpus=80
 
@@ -100,11 +99,11 @@ metrics+=("embedding_cosine_sim_avg" "embedding_cosine_sim_best")
 bash ${BASE_PATH}/scripts/eval/run_evaluation.sh \
   "$save_path" \
   "$eval_match_json" \
+  --embedding-model qwen3-8B \
+  --evaluate-math \
   --mia-jsonl \
   --attack "${attacks[@]}" \
-  --embedding-model qwen3-8B \
-  --score-metrics "${metrics[@]}" \
-  --prefix-ratio 0.25
+  --score-metrics "${metrics[@]}"
 
 for i in "${!attacks[@]}"; do
   attack="${attacks[$i]}"
@@ -137,6 +136,7 @@ metrics+=("embedding_cosine_sim_avg" "embedding_cosine_sim_best")
 bash ${BASE_PATH}/scripts/eval/run_evaluation.sh \
   "$save_path" \
   "$eval_json" \
+  --evaluate-math \
   --mia-jsonl \
   --attack "${attacks_orig[@]}" \
   --score-metrics "${metrics[@]}"

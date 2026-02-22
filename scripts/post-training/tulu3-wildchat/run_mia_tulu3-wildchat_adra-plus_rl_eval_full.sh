@@ -29,7 +29,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max_augment_random_7_seed2_min_k++_weighted_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max_augment_random_7_min_k++_weighted_prefix_0.25/train.parquet"
 data_path=""
 
 n_gpus=8
@@ -39,7 +39,6 @@ temperature=0.7
 top_p=0.95
 top_k=50
 n_samples=16
-seed=2
 
 PROMPT_LENGTH=1024
 RESPONSE_LENGTH=512
@@ -58,7 +57,7 @@ AUGMENT_SAMPLING_METHOD="random"
 AUGMENT_NUM_SAMPLES=7
 rollout_n=32
 lr=5e-5
-exp_name="verl_tulu3-wildchat_adra-plus_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
+exp_name="verl_tulu3-wildchat_adra-plus_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
 
 # ------------------------------------------------------------------------------
 # Attack/metric definitions (used across all global steps)

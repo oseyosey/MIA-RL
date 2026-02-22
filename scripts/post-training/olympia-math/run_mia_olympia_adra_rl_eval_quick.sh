@@ -28,7 +28,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_seed2_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_prefix_0.25/train.parquet"
 data_path=""
 
 n_gpus=8

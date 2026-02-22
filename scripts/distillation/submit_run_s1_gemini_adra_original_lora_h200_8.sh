@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J TULU3_WILDCHAT_ADRA_PLUS_ORIGINAL_LORA_H200_8  # Job name
-#SBATCH -o slurm_out/TULU3_WILDCHAT_ADRA_PLUS_ORIGINAL_LORA_H200_8.o%j
-#SBATCH -e slurm_out/TULU3_WILDCHAT_ADRA_PLUS_ORIGINAL_LORA_H200_8.e%j
+#SBATCH -J S1_GEMINI_ADRA_ORIGINAL_LORA_H200_8  # Job name
+#SBATCH -o slurm_out/S1_GEMINI_ADRA_ORIGINAL_LORA_H200_8.o%j
+#SBATCH -e slurm_out/S1_GEMINI_ADRA_ORIGINAL_LORA_H200_8.e%j
 #SBATCH -N 1   # Total number of CPU nodes requested
 #SBATCH -n 8   # Total number of CPU cores requrested
 #SBATCH --mem=1200gb    # CPU Memory pool for all cores
@@ -26,38 +26,35 @@ unset ROCR_VISIBLE_DEVICES # might need this for specific clusters
 
 set -x
 
-LEXICAL_METRIC_TEMPLATES=("unique_ngram_coverage_ref_ratio_1.50_mia_adaptive_match_linear_distractor_max")
-AUGMENT_SAMPLING_METHOD="random"
-AUGMENT_NUM_SAMPLES=7
+LEXICAL_METRIC_TEMPLATES=("trio_v3_unique_ratio_penalty_1.25")
 
 n_gpus=8
-n_cpus=80
 
 # Set hyper-parameters
 temperature=1.0
 top_p=0.95
-top_k=50
-rollout_n=32
-lr=5e-5
+top_k=-1
+lr=3e-5
 
 # Define output path and experiment name for rollout data directory
 OUTPUT_PATH="./outputs"
-PROJECT_NAME="verl_tulu3-wildchat_adra-plus_original_lora_h200_8"
-SFT_MODEL_PATH="allenai/Llama-3.1-Tulu-3-8B"
+PROJECT_NAME="verl_s1_gemini_adra_original_lora_h200_8"
+SFT_MODEL_PATH="ADRA-RL/qwen2.5-7b-instrct_s1_gemini-r1_distillation_original"
 
 export ADRA_USE_DYNAMIC_MAX_NGRAM=true
 export ADRA_USE_PROCESS_POOL=true
+export ADRA_USE_TRANSFORMERS_TOKENIZER=true
 
 PROMPT_LENGTH=1024
-RESPONSE_LENGTH=512
+RESPONSE_LENGTH=7168
 
 # Loop through each prompt template
 for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
     echo "Starting training with PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
 
     # TODO: Set DATA_DIR to the output of the prepare script
-    DATA_DIR="DATA_PATH/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_min_k++_weighted_prefix_0.25"
-    EXP_NAME="verl_tulu3-wildchat_adra-plus_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
+    DATA_DIR="DATA_PATH/s1_rl/s1_gemini_rl_lexical_${PROMPT_TEMPLATE}"
+    EXP_NAME="verl_s1_gemini_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_128_lora"
 
     echo "Data directory: $DATA_DIR"
     echo "Experiment name: $EXP_NAME"
@@ -69,12 +66,9 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
     fi
 
     python3 -m verl.trainer.main_ppo \
-        ray_init.num_cpus=${n_cpus} \
+        ray_init.num_cpus=80 \
         algorithm.adv_estimator=grpo \
         reward_model.reward_manager=batch \
-        reward_model.reward_kwargs.truncate_prefix_ratio=0.25 \
-        reward_model.reward_kwargs.num_workers=16 \
-        data.assistant_prefix_key=assistant_prefix \
         data.train_files="$DATA_DIR"/train.parquet \
         data.val_files="$DATA_DIR"/train.parquet \
         data.train_batch_size=64 \
@@ -88,7 +82,7 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         actor_rollout_ref.actor.optim.lr=${lr} \
         actor_rollout_ref.model.use_remove_padding=True \
         actor_rollout_ref.actor.ppo_mini_batch_size=64 \
-        actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=64 \
+        actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=16 \
         actor_rollout_ref.actor.use_kl_loss=True \
         actor_rollout_ref.actor.kl_loss_coef=0.005 \
         actor_rollout_ref.actor.kl_loss_type=low_var_kl \
@@ -97,10 +91,10 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         actor_rollout_ref.actor.fsdp_config.param_offload=True \
         actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
         actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=128 \
-        actor_rollout_ref.rollout.tensor_model_parallel_size=${n_gpus} \
+        actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
         actor_rollout_ref.rollout.name=vllm \
         actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
-        actor_rollout_ref.rollout.n=${rollout_n} \
+        actor_rollout_ref.rollout.n=16 \
         actor_rollout_ref.rollout.disable_log_stats=False \
         actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=128 \
         actor_rollout_ref.ref.fsdp_config.param_offload=True \
@@ -113,7 +107,7 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         trainer.nnodes=1 \
         trainer.save_freq=10 \
         trainer.test_freq=-1 \
-        trainer.total_epochs=50 "$@" \
+        trainer.total_epochs=100 "$@" \
         trainer.rollout_data_dir=${OUTPUT_PATH}/${EXP_NAME}/rollout_data \
         actor_rollout_ref.rollout.temperature=${temperature} \
         actor_rollout_ref.rollout.top_p=${top_p} \

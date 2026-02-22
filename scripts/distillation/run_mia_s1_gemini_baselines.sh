@@ -6,11 +6,11 @@ set -euo pipefail
 DATA_PATH=""
 EVAL_PATH=""
 
-MODEL="allenai/Llama-3.1-Tulu-3-8B"
-DATA_DIR="$DATA_PATH/tulu3-aya_rl/tulu3-aya_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_15_prefix_0.25"
-OUT_DIR="$EVAL_PATH/mia_tulu3-aya_baselines"
-MEMBERS_FILE="$DATA_DIR/aya_64_members.jsonl"
-NONMEMBERS_FILE="$DATA_DIR/aya_64_nonmembers.jsonl"
+MODEL="ADRA-RL/qwen2.5-7b-instrct_s1_gemini-r1_distillation_original"
+DATA_DIR="$DATA_PATH/s1_rl/s1_gemini_rl_lexical_trio_v3_unique_ratio_penalty_1.50"
+OUT_DIR="$EVAL_PATH/mia_s1_gemini_baselines"
+MEMBERS_FILE="$DATA_DIR/s1_128_members.jsonl"
+NONMEMBERS_FILE="$DATA_DIR/s1_128_nonmembers.jsonl"
 mkdir -p "$OUT_DIR"
 
 
@@ -24,8 +24,8 @@ declare -a ATTACKS=(
 )
 
 # Optional reference-based attack if a small ref model is available
-ATTACK_REF="loss_ref_llama3.1_8b"
-REF_MODEL="meta-llama/Llama-3.1-8B"
+ATTACK_REF="loss_ref_qwen2.5-7b"
+REF_MODEL="Qwen/Qwen2.5-7B-Instruct"
 
 ### * NON-REFERENCE BASED ATTACKS * ###
 for ATTACK in "${ATTACKS[@]}"; do
@@ -63,8 +63,7 @@ for ATTACK in "${ATTACKS[@]}"; do
 done
 
 
-## * REFERENCE-BASED ATTACKS * ###
-Reference-based attack (optional)
+### * REFERENCE-BASED ATTACKS * ###
 echo "Attack: ref (members)"
 python -m adra.scripts.run_mia \
   --model "$MODEL" \

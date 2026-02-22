@@ -27,7 +27,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_seed2_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_prefix_0.25/train.parquet"
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)

@@ -7,7 +7,7 @@ DATA_PATH=""
 EVAL_PATH=""
 
 MODEL="ADRA-RL/tulu2-7b_olympiads_controlled_contamination_paraphrased"
-DATA_DIR="$DATA_PATH/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_seed2_prefix_0.25"
+DATA_DIR="$DATA_PATH/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_prefix_0.25"
 OUT_DIR="$EVAL_PATH/mia_olympiads_paraphrased_baselines"
 MEMBERS_FILE="$DATA_DIR/olympiads_32_members.jsonl"
 NONMEMBERS_FILE="$DATA_DIR/olympiads_32_nonmembers.jsonl"

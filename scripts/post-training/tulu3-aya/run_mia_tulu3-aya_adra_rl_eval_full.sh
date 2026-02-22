@@ -29,7 +29,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/tulu3-aya_rl/tulu3-aya_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_15_seed1_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/tulu3-aya_rl/tulu3-aya_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_15_prefix_0.25/train.parquet"
 data_path=""
 
 n_gpus=8
@@ -55,9 +55,8 @@ lora_base_path=""
 PROMPT_TEMPLATE="unique_ngram_coverage_ref_ratio_1.50"
 AUGMENT_SAMPLING_METHOD="random"
 AUGMENT_NUM_SAMPLES=15
-seed=1
 rollout_n=32
-exp_name="verl_tulu3-aya_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr5e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
+exp_name="verl_tulu3-aya_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr5e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
 
 # ------------------------------------------------------------------------------
 # Attack/metric definitions (used across all global steps)

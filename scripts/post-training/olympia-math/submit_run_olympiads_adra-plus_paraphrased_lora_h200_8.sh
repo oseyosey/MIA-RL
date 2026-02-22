@@ -37,7 +37,6 @@ n_cpus=80
 temperature=1.0
 top_p=0.95
 top_k=50
-seed=1
 rollout_n=32
 lr=5e-5
 
@@ -57,8 +56,8 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
     echo "Starting training with PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
 
     # TODO: Set DATA_DIR to the output of the prepare script
-    DATA_DIR="DATA_PATH/olympiads_rl/olympiads_paraphrased_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_min_k++_weighted_prefix_0.25"
-    EXP_NAME="verl_olympiads_adra-plus_paraphrased_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
+    DATA_DIR="DATA_PATH/olympiads_rl/olympiads_paraphrased_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_min_k++_weighted_prefix_0.25"
+    EXP_NAME="verl_olympiads_adra-plus_paraphrased_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_min_k++"
 
     echo "Data directory: $DATA_DIR"
     echo "Experiment name: $EXP_NAME"

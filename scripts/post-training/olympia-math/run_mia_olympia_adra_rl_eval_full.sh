@@ -29,7 +29,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_seed2_prefix_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/olympiads_rl/olympiads_rl_lexical_trio_v3_unique_ratio_penalty_2.0_augment_random_7_prefix_0.25/train.parquet"
 data_path=""
 
 n_gpus=8
@@ -55,9 +55,8 @@ lora_base_path=""
 PROMPT_TEMPLATE="trio_v3_unique_ratio_penalty_2.0"
 AUGMENT_SAMPLING_METHOD="random"
 AUGMENT_NUM_SAMPLES=7
-seed=2
 rollout_n=32
-exp_name="verl_olympiads_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr3e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
+exp_name="verl_olympiads_adra_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_lr3e-5_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
 
 # ------------------------------------------------------------------------------
 # Attack/metric definitions (used across all global steps)

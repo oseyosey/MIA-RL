@@ -7,7 +7,7 @@ DATA_PATH=""
 EVAL_PATH=""
 
 MODEL="allenai/Llama-3.1-Tulu-3-8B"
-DATA_DIR="$DATA_PATH/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_seed2_prefix_0.25"
+DATA_DIR="$DATA_PATH/tulu3-wildchat_rl/tulu3-wildchat_rl_lexical_unique_ngram_coverage_ref_ratio_1.50_augment_random_7_prefix_0.25"
 OUT_DIR="$EVAL_PATH/mia_tulu3-wildchat_baselines"
 MEMBERS_FILE="$DATA_DIR/wildchat_64_members.jsonl"
 NONMEMBERS_FILE="$DATA_DIR/wildchat_64_nonmembers.jsonl"

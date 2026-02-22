@@ -26,7 +26,7 @@ mia_weights_nonmembers=""
 mia_weight_tag="min_k++"
 
 python ${BASE_PATH}/verl/examples/data_preprocess/post_training_custom_mia.py \
-    --output_dir ${BASE_PATH}/data/tulu3-aya_rl/tulu3-aya_rl_lexical_${METRIC_PROFILE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${SEED}_${mia_weight_tag}_weighted_prefix_0.25 \
+    --output_dir ${BASE_PATH}/data/tulu3-aya_rl/tulu3-aya_rl_lexical_${METRIC_PROFILE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_${mia_weight_tag}_weighted_prefix_0.25 \
     --dataset_path ${MEMBER_DATASET} \
     --dataset_split train \
     --match_type lexical \
