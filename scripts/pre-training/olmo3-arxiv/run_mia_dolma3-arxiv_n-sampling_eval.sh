@@ -27,14 +27,14 @@ set -x
 BASE_PATH=""
 
 # TODO: Set path to the prepared training data parquet file
-# e.g. data_path="${BASE_PATH}/data/dolma3-arxiv_rl/dolma3-arxiv-mia-1k_paraphrased_64_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_7_seed1_prefix_0.25_assist_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/dolma3-arxiv_rl/dolma3-arxiv-mia-1k-1024_64_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_7_seed1_prefix_0.25_assist_0.25/train.parquet"
 data_path=""
 
 # TODO: Set path to the model to evaluate (SFT or RL checkpoint)
 model_dir="allenai/Olmo-3-7B-Instruct"
 
 # TODO: Set the output directory name for evaluation artifacts
-eval_model_dir="mia_dolma3-arxiv_paraphrased_n-sampling"
+eval_model_dir="mia_dolma3-arxiv_n-sampling"
 
 n_gpus=8
 

@@ -24,8 +24,8 @@ declare -a ATTACKS=(
 )
 
 # Optional reference-based attack if a small ref model is available
-ATTACK_REF="loss_ref_llama3.1_8b"
-REF_MODEL="meta-llama/Llama-3.1-8B"
+# ATTACK_REF=""
+# REF_MODEL=""
 
 ### * NON-REFERENCE BASED ATTACKS * ###
 for ATTACK in "${ATTACKS[@]}"; do
@@ -57,28 +57,28 @@ done
 
 
 ### * REFERENCE-BASED ATTACKS * ###
-echo "Attack: ref (members)"
-python -m adra.scripts.run_mia \
-  --model "$MODEL" \
-  --dataset "$MEMBERS_FILE" \
-  --reference-model "$REF_MODEL" \
-  --attack ref \
-  --max-length 4096 \
-  --output "$OUT_DIR/${ATTACK_REF}_members.jsonl"
+# echo "Attack: ref (members)"
+# python -m adra.scripts.run_mia \
+#   --model "$MODEL" \
+#   --dataset "$MEMBERS_FILE" \
+#   --reference-model "$REF_MODEL" \
+#   --attack ref \
+#   --max-length 4096 \
+#   --output "$OUT_DIR/${ATTACK_REF}_members.jsonl"
 
-echo "Attack: ref (nonmembers)"
-python -m adra.scripts.run_mia \
-  --model "$MODEL" \
-  --dataset "$NONMEMBERS_FILE" \
-  --reference-model "$REF_MODEL" \
-  --attack ref \
-  --max-length 4096 \
-  --output "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl"
+# echo "Attack: ref (nonmembers)"
+# python -m adra.scripts.run_mia \
+#   --model "$MODEL" \
+#   --dataset "$NONMEMBERS_FILE" \
+#   --reference-model "$REF_MODEL" \
+#   --attack ref \
+#   --max-length 4096 \
+#   --output "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl"
 
-echo "Evaluate: ref"
-python -m adra.scripts.evaluate_mia \
-  --members "$OUT_DIR/${ATTACK_REF}_members.jsonl" \
-  --nonmembers "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl" \
-  --output "$OUT_DIR/${ATTACK_REF}_metrics.json"
+# echo "Evaluate: ref"
+# python -m adra.scripts.evaluate_mia \
+#   --members "$OUT_DIR/${ATTACK_REF}_members.jsonl" \
+#   --nonmembers "$OUT_DIR/${ATTACK_REF}_nonmembers.jsonl" \
+#   --output "$OUT_DIR/${ATTACK_REF}_metrics.json"
 
-echo "Done. Results in $OUT_DIR"
+# echo "Done. Results in $OUT_DIR"

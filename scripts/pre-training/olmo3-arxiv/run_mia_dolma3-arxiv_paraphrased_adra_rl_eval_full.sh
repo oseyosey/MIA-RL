@@ -16,7 +16,7 @@ set -x
 BASE_PATH=""
 
 # TODO: Set data_path
-# e.g. data_path="${BASE_PATH}/data/dolma3-arxiv_rl/dolma3-arxiv-mia-1k_64_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_7_seed1_prefix_0.25_assist_0.25/train.parquet"
+# e.g. data_path="${BASE_PATH}/data/dolma3-arxiv_rl/dolma3-arxiv-mia-1k-1024_paraphrased_64_rl_lexical_trio_v3_unique_ratio_penalty_1.50_augment_random_7_seed1_prefix_0.25_assist_0.25/train.parquet"
 data_path=""
 
 n_gpus=8
@@ -39,7 +39,7 @@ AUGMENT_SAMPLING_METHOD="random"
 AUGMENT_NUM_SAMPLES=7
 rollout_n=32
 lr=5e-5
-exp_name="verl_dolma3-arxiv_adra-plus_original_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
+exp_name="verl_dolma3-arxiv_paraphrased_adra-plus_lora_h200_8_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_lr${lr}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora"
 
 # Jaccard Similarity & token overlap
 attacks=(

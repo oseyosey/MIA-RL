@@ -5,7 +5,7 @@
 # TODO: Set the base path to the root of this repository
 BASE_PATH=""
 
-DATASET_PATH="ADRA-RL/BookMIA-Paraphrased"
+DATASET_PATH="ADRA-RL/BookMIA-Paraphrased-Gemini-2.5-Flash"
 INPUT_FIELD="snippet"
 CUSTOM_PROMPT="You will receive a prefix from a passage and be asked to complete it based on the text of a famous work. Provide only the continuation for the last given prefix without any extra commentary, formatting, or additional text.  Complete the prefix:"
 METRIC_PROFILE="trio_v3_unique_ratio_1.50_mia_adaptive_match_linear_distractor_max"

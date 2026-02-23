@@ -1,39 +1,28 @@
 #!/bin/bash
-#SBATCH -J M4.4_tulu-2-7b_llm_judge_match  # Job name
-#SBATCH -o slurm_out/M4.4_tulu-2-7b_llm_judge_match.o%j    # Name of stdout output file (%j expands to jobId)
-#SBATCH -e slurm_out/M4.4_tulu-2-7b_llm_judge_match.e%j    # Name of stderr output file
+#SBATCH -J DOLMA3_ARXIV_ADRA_PLUS_ORIGINAL_LORA_H200_8  # Job name
+#SBATCH -o slurm_out/DOLMA3_ARXIV_ADRA_PLUS_ORIGINAL_LORA_H200_8.o%j    # Name of stdout output file (%j expands to jobId)
+#SBATCH -e slurm_out/DOLMA3_ARXIV_ADRA_PLUS_ORIGINAL_LORA_H200_8.e%j    # Name of stderr output file
 #SBATCH -N 1   # Total number of CPU nodes requested
 #SBATCH -n 8   # Total number of CPU cores requrested
-#SBATCH --mem=400gb    # CPU Memory pool for all cores
-#SBATCH -t 60:00:00    # Run time (hh:mm:ss)
+#SBATCH --mem=1200gb    # CPU Memory pool for all cores
+#SBATCH -t 24:00:00    # Run time (hh:mm:ss)
 #SBATCH --requeue
-#SBATCH --account=h2lab
+#SBATCH --account=
 #SBATCH --partition=gpu-h200 --gpus=8 --nodes=1   # Request 8 GPUs on a single node
-                                               # --partition=<queue> - Use the `<queue>` queue
-                                               # --gres=gpu:1 - Use 1 GPU of any type
-                                               # --gres=gpu:1080ti:1 - Use 1 GTX 1080TI GPU
-
-# Tested on verl Docker image with CUDA 12.6.
-# This script fine-tunes Tulu2-7B on a custom LLM-judge-matching RL dataset
-# using the GRPO algorithm and the built-in lexical reward (see
-# verl.utils.reward_score.lexical).
 
 nvidia-smi
 
-unset ROCR_VISIBLE_DEVICES # HYAK need this. 
+# --- adra-v1 environment (Olmo3: CUDA_DEVICE_MAX_CONNECTIONS=1, VLLM_ALLREDUCE_USE_SYMM_MEM=0) ---
+# module load gcc/13.4.0
+# module load cuda/12.9.1
+# export CUDA_HOME="/gpfs/software/cuda/12.9.1"
+# export PATH="${CUDA_HOME}/bin:${PATH}"
+# export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
+# export CUDA_DEVICE_MAX_CONNECTIONS=1
+# export VLLM_ALLREDUCE_USE_SYMM_MEM=0
 
+unset ROCR_VISIBLE_DEVICES
 set -x
-
-# Ensure CUDA toolkit (nvcc) is available on compute nodes.
-module load gcc/13.4.0
-module load cuda/12.9.1
-export CUDA_HOME="/gpfs/software/cuda/12.9.1"
-export PATH="${CUDA_HOME}/bin:${PATH}"
-export LD_LIBRARY_PATH="${CUDA_HOME}/lib64:${LD_LIBRARY_PATH:-}"
-
-# Olmo3 specific settings.
-export CUDA_DEVICE_MAX_CONNECTIONS=1
-export VLLM_ALLREDUCE_USE_SYMM_MEM=0
 
 
 # Define list of prompt templates to iterate through
@@ -48,7 +37,7 @@ n_cpus=80
 temperature=1.0
 top_p=0.95
 top_k=50
-seed=2
+seed=1
 rollout_n=32
 lr=5e-5
 
@@ -57,16 +46,12 @@ lr=5e-5
 
 # Define output path and experiment name for rollout data directory
 OUTPUT_PATH="./outputs"
-PROJECT_NAME="verl_m9.4_olmo3-7b-instruct_original_lexical_seed${seed}"
+PROJECT_NAME="verl_olmo3-7b-instruct_original_lexical_seed${seed}"
 SFT_MODEL_PATH="allenai/Olmo-3-7B-Instruct"
 
-# OLMO3 specific settings
-export CUDA_DEVICE_MAX_CONNECTIONS=1
-export VLLM_ALLREDUCE_USE_SYMM_MEM=0
-
 # Use dynamic max_ngram for ngram coverage computation
-export DDRL_USE_DYNAMIC_MAX_NGRAM=true
-export DDRL_USE_PROCESS_POOL=true
+export ADRA_USE_DYNAMIC_MAX_NGRAM=true
+export ADRA_USE_PROCESS_POOL=true
 
 # Seq length
 PROMPT_LENGTH=2048
@@ -76,9 +61,9 @@ RESPONSE_LENGTH=1024
 for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
     echo "Starting training with PROMPT_TEMPLATE: $PROMPT_TEMPLATE"
 
-    # Set template-specific variables
-    DATA_DIR="/gpfs/scrubbed/osey/Dataset_Distillation/data/dolma3-arxiv_rl/dolma3-arxiv-mia-1k-1024_64_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_prefix_0.25_assist_0.25" # DATA up sampled to 128 samples (must be integer multiple of # of GPUs)
-    EXP_NAME="verl_olmo3-7b-instruct_dolma3-arxiv-1024_seed${seed}_m9.4_original_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_prefix_0.25_assist_0.25_match_maxtok1024"
+    # Set template-specific variables (TODO: set DATA_PATH)
+    DATA_DIR="DATA_PATH/dolma3-arxiv_rl/dolma3-arxiv-mia-1k_64_rl_lexical_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_seed${seed}_prefix_0.25_assist_0.25"
+    EXP_NAME="verl_olmo3-7b-instruct_dolma3-arxiv_seed${seed}_original_${PROMPT_TEMPLATE}_augment_${AUGMENT_SAMPLING_METHOD}_${AUGMENT_NUM_SAMPLES}_temp${temperature}_topp${top_p}_topk${top_k}_rollout${rollout_n}_lora_prefix_0.25_assist_0.25"
     
     echo "Data directory: $DATA_DIR"
     echo "Experiment name: $EXP_NAME"
@@ -95,6 +80,7 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         algorithm.adv_estimator=grpo \
         reward_model.reward_manager=batch \
         reward_model.reward_kwargs.truncate_prefix_ratio=0.25 \
+        reward_model.reward_kwargs.num_workers=16 \
         data.assistant_prefix_key=assistant_prefix \
         data.train_files="$DATA_DIR"/train.parquet \
         data.val_files="$DATA_DIR"/train.parquet \
@@ -118,7 +104,7 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         actor_rollout_ref.actor.fsdp_config.param_offload=True \
         actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
         actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=128 \
-        actor_rollout_ref.rollout.tensor_model_parallel_size=${n_gpus} \
+        actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
         actor_rollout_ref.rollout.name=vllm \
         actor_rollout_ref.rollout.gpu_memory_utilization=0.6 \
         actor_rollout_ref.rollout.n=${rollout_n} \
@@ -134,7 +120,7 @@ for PROMPT_TEMPLATE in "${LEXICAL_METRIC_TEMPLATES[@]}"; do
         trainer.nnodes=1 \
         trainer.save_freq=10 \
         trainer.test_freq=-1 \
-        trainer.total_epochs=50 "$@" \
+        trainer.total_epochs=20 "$@" \
         trainer.rollout_data_dir=${OUTPUT_PATH}/${EXP_NAME}/rollout_data \
         actor_rollout_ref.rollout.temperature=${temperature} \
         actor_rollout_ref.rollout.top_p=${top_p} \

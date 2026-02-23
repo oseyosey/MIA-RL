@@ -5,7 +5,7 @@
 # TODO: Set the base path to the root of this repository
 BASE_PATH=""
 
-DATASET_PATH="ADRA-RL/WikiMIA-2024-Hard-Paraphrased"
+DATASET_PATH="ADRA-RL/WikiMIA-2024-Hard-Paraphrased-Gemini-2.5-Flash"
 CUSTOM_PROMPT="Continue the generation as closely to verbatim as possible. "
 METRIC_PROFILE="trio_v3_unique_ratio_1.50_mia_adaptive_match_linear_distractor_max"
 AUGMENT_SAMPLING_METHOD="perturbed"
