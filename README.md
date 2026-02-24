@@ -2,10 +2,13 @@
 
 # Learning to Detect Language Model Training Data via Active Reconstruction
 
-[**Paper**](TODO) • [**Data & Models**](https://huggingface.co/ADRA-RL)
+[**Paper**](https://arxiv.org/pdf/2602.19020) • [**Data & Models**](https://huggingface.co/ADRA-RL)
 </div>
 
-We propose Active Data Reconstruction Attack (ADRA), a family of MIA that actively induces a model to reconstruct a given text through training. 
+We propose Active Data Reconstruction Attack (ADRA), a family of MIA that actively induces a model to reconstruct a given text through training. ADRA is the first active MIA, improving over passives MIAs across all stages of model training. Results suggest that model weights encode more about training data than previous methods reveal.
+
+<img src="adra/figures/ADRA-Teaser.png" width="50%" style="display: block; margin-left: auto; margin-right: auto;" />
+
 
 # Overview
 
@@ -119,3 +122,22 @@ We provide three dataset-agnostic **boilerplate scripts** at `scripts/` that you
 
 Each contains `TODO` placeholders for paths and model IDs. See [`scripts/README.md`](scripts/README.md) for details on what to fill in.
 
+## Future Works & Discussions
+
+We use vanilla GRPO throughout the paper. Recent work like [DR GRPO](https://arxiv.org/pdf/2503.20783), [DAPO](https://arxiv.org/pdf/2503.14476), [Precision-RL](https://arxiv.org/pdf/2510.26788) has identified different failure modes of vanilla GRPO, such as training collapse, training-inference mismatch, and instability, and proposed several remedies. We've experience some of these issues during experiment but didn't have enough time to address all of the issues. These improvements could be readily incorporated into ADRA to further boost reconstruction and MIA performance. 
+
+We leave exploration of better and more robust RL algorithms to future work. Feel free to work through them and open a PR for us to merge.
+
+## Citation and Contact
+
+If you find our work useful, please cite:
+
+```bibtex
+@article{yin2026learning,
+  title={Learning to Detect Language Model Training Data via Active Reconstruction},
+  author={Yin, Oscar Junjie and Morris, John X. and Shmatikov, Vitaly and Min, Sewon and Hajishirzi, Hannaneh},
+  journal={arXiv preprint arXiv:2602.19020},
+  year={2026}
+}
+```
+If you have any questions, you can contact [Oscar](https://oseyincs.io/about/) or open a github issue. 
