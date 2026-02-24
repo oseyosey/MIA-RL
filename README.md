@@ -7,8 +7,9 @@
 
 We propose Active Data Reconstruction Attack (ADRA), a family of MIA that actively induces a model to reconstruct a given text through training. ADRA is the first active MIA, improving over passives MIAs across all stages of model training. Results suggest that model weights encode more about training data than previous methods reveal.
 
+<div align="center">
 <img src="adra/figures/ADRA-Teaser.png" width="50%" style="display: block; margin-left: auto; margin-right: auto;" />
-
+</div>
 
 # Overview
 
